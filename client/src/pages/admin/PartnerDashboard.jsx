@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import Icon from '../../components/Icons';
+import ProductImage from '../../components/ProductImage';
 import TestimonialsPanel from './PartnerTestimonials';
 import { useToast } from '../../components/Toast';
 import { useAuth } from '../../context/AuthContext';
@@ -249,7 +250,13 @@ export default function PartnerDashboard() {
                       <tr key={p.id}>
                         <td>
                           <div className="cell-product">
-                            <img src={p.image} alt="" className="cell-img" loading="lazy" />
+                            <ProductImage
+                              src={p.image}
+                              alt=""
+                              className="cell-img"
+                              loading="lazy"
+                              preferThumb
+                            />
                             <div>
                               <strong>{p.shortName || p.name}</strong>
                               <span className="muted">
