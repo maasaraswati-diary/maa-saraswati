@@ -282,6 +282,84 @@ export async function removeEnquiry(id) {
   await deleteDoc(doc(db, 'enquiries', id));
 }
 
+/* ------------------------------------------------------------------ images */
+
+// Cloud Storage would be the natural home for uploads, but creating a bucket
+// needs a billing account, so pictures live in Firestore instead - already
+// optimised to WebP on the way in. `product.image` then holds "upload:<docId>",
+// which ProductImage resolves; see firestore.rules for who may read or write.
+
+export const imageRef = (id) => `upload:${id}`;
+export const isUploadRef = (ref) =>
+  typeof ref === 'string' && ref.startsWith('upload:');
+export const uploadIdFromRef = (ref) => String(ref).slice('upload:'.length);
+
+/**
+ * Stores an already-optimised picture and returns its reference. The document
+ * carries both sizes so a listing page only pulls the thumbnail.
+ */
+export async function saveProductImage({ large, thumb, name }, user) {
+  const id = `img_${newId()}`;
+  await setDoc(doc(db, 'uploads', id), {
+    ownerEmail: user?.email || '',
+    name: name || 'image',
+    // Stored as raw bytes and read back as a data URL, so Firestore does not
+    // inflate the base64 any further.
+    large: bytesFromDataUrl(large.dataUrl),
+    thumb: bytesFromDataUrl(thumb.dataUrl),
+    mime: 'image/webp',
+    width: large.w,
+    height: large.h,
+    bytes: large.bytes,
+    createdAt: nowIso(),
+  });
+  return imageRef(id);
+}
+
+/** One image document, for the storefront to render. */
+export async function fetchProductImage(id) {
+  const snap = await getDoc(doc(db, 'uploads', id));
+  if (!snap.exists()) return null;
+  const d = snap.data();
+  return {
+    large: dataUrlFromBytes(d.large),
+    thumb: dataUrlFromBytes(d.thumb) || dataUrlFromBytes(d.large),
+    width: d.width,
+    height: d.height,
+  };
+}
+
+const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+
+/** data URL -> array of bytes, the form Firestore stores natively. */
+function bytesFromDataUrl(dataUrl) {
+  const base64 = String(dataUrl).split(',')[1] || '';
+  const clean = base64.replace(/[^A-Za-z0-9+/]/g, '');
+  const bytes = new Uint8Array((clean.length * 3) >> 2);
+  let p = 0;
+  for (let i = 0; i < clean.length; i += 4) {
+    const n =
+      (B64.indexOf(clean[i]) << 18) |
+      (B64.indexOf(clean[i + 1]) << 12) |
+      ((B64.indexOf(clean[i + 2]) & 63) << 6) |
+      (B64.indexOf(clean[i + 3]) & 63);
+    if (p < bytes.length) bytes[p++] = (n >> 16) & 255;
+    if (p < bytes.length) bytes[p++] = (n >> 8) & 255;
+    if (p < bytes.length) bytes[p++] = n & 255;
+  }
+  return bytes;
+}
+
+/** Stored bytes -> data URL. */
+function dataUrlFromBytes(bytes) {
+  if (!bytes) return '';
+  const arr =
+    bytes instanceof Uint8Array ? bytes : Uint8Array.from(Object.values(bytes));
+  let out = '';
+  for (let i = 0; i < arr.length; i += 1) out += String.fromCharCode(arr[i]);
+  return `data:image/webp;base64,${btoa(out)}`;
+}
+
 /* ------------------------------------------------------------ testimonials */
 
 // Written only by the shop owner, read by everyone - see `testimonials` in

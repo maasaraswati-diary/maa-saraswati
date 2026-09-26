@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import Icon, { ICON_MAP } from './Icons';
-import Picture from './Picture';
+import ProductImage from './ProductImage';
 import { formatPrice, discountPercent } from '../api';
 
 export default function ProductCard({ product, index = 0 }) {
@@ -17,10 +17,11 @@ export default function ProductCard({ product, index = 0 }) {
     >
       <div className="pcard-media">
         {imgOk ? (
-          <Picture
+          <ProductImage
             src={product.image}
             alt={product.name}
             loading="lazy"
+            preferThumb
             sizes="(max-width: 620px) 92vw, (max-width: 1000px) 46vw, 30vw"
             onError={() => setImgOk(false)}
           />

@@ -66,6 +66,21 @@ service cloud.firestore {
       allow write: if owner();
     }
 
+    // ---------- uploads : pictures a partner attached ----------
+    // Cloud Storage would need a billing account, so optimised WebP bytes live
+    // in Firestore. Anyone must be able to read them, because the storefront
+    // shows them. A signed-in partner may add one for themselves; only the owner
+    // can change or remove anything, so a partner can never touch the shop's own
+    // pictures. The size ceilings keep a document under Firestore's 1 MB limit.
+    match /uploads/{id} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.ownerEmail == request.auth.token.email
+        && request.resource.data.large.size() < 900000
+        && request.resource.data.thumb.size() < 300000;
+      allow update, delete: if owner();
+    }
+
     // ---------- enquiries ----------
     match /enquiries/{id} {
       allow read, update, delete: if owner();

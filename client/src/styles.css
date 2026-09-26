@@ -4622,3 +4622,48 @@
 .tst-play:hover {
   opacity: 1;
 }
+
+/* ============================================================
+   IMAGE UPLOAD IN THE PARTNER PANEL
+   A hidden file input inside a button, so picking a picture is
+   a normal click. A partner never has to know what a file path is.
+   ============================================================ */
+
+.upload-btn {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.upload-btn input[type='file'] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  font-size: 0;
+}
+
+.upload-btn:has(input:disabled) {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+/* Stands in for a picture still being fetched from Firestore. */
+.img-loading {
+  display: block;
+  width: 100%;
+  min-height: 120px;
+  border-radius: var(--r-md, 12px);
+  background: linear-gradient(100deg, #eef3ef 30%, #e2ebe5 50%, #eef3ef 70%);
+  background-size: 220% 100%;
+  animation: imgShimmer 1.3s linear infinite;
+}
+
+@keyframes imgShimmer {
+  from { background-position: 180% 0; }
+  to   { background-position: -60% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .img-loading { animation: none; }
+}

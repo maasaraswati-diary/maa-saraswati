@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import Icon from '../../components/Icons';
+import ProductImage from '../../components/ProductImage';
 import { useToast } from '../../components/Toast';
 import { useAuth } from '../../context/AuthContext';
 import { useFetch } from '../../hooks';
@@ -8,8 +9,10 @@ import {
   createProduct,
   updateProduct,
   fetchAllProducts,
+  saveProductImage,
 } from '../../store/db';
 import { getCategories } from '../../catalogue';
+import { optimiseImage, prettyBytes } from '../../lib/imageOptimiser';
 
 const ICON_CHOICES = [
   'drop', 'shield', 'nutrition', 'family', 'muscle',
@@ -51,6 +54,8 @@ export default function PartnerProductForm() {
   const [texts, setTexts] = useState({ description: '', highlights: '', usage: '' });
   const [errors, setErrors] = useState({});
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadMsg, setUploadMsg] = useState('');
   const [loading, setLoading] = useState(isEdit);
 
   // Existing categories come from the live catalogue.
@@ -106,6 +111,51 @@ export default function PartnerProductForm() {
   const addImagePath = () => {
     const v = window.prompt('Image ka path ya URL daalein:', '/images/products/');
     if (v && v.trim()) setForm((f) => ({ ...f, images: [...f.images, v.trim()] }));
+  };
+
+  /**
+   * Pick a picture from the computer. It is shrunk to WebP in the browser first,
+   * so a 4 MB phone photo is stored as roughly 100 KB, then kept in Firestore.
+   */
+  const onPickFiles = async (e) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = ''; // so the same file can be picked again after a delete
+    if (!files.length) return;
+
+    setUploading(true);
+    const added = [];
+    const problems = [];
+    let before = 0;
+    let after = 0;
+
+    for (const file of files) {
+      try {
+        setUploadMsg(`${file.name} compress ho rahi hai…`);
+        // eslint-disable-next-line no-await-in-loop
+        const shot = await optimiseImage(file);
+        setUploadMsg(
+          `${file.name} upload ho rahi hai (${prettyBytes(file.size)} → ${prettyBytes(shot.large.bytes)})`
+        );
+        // eslint-disable-next-line no-await-in-loop
+        const ref = await saveProductImage(shot, user);
+        added.push(ref);
+        before += file.size;
+        after += shot.large.bytes + shot.thumb.bytes;
+      } catch (err) {
+        problems.push(`${file.name}: ${err.message}`);
+      }
+    }
+
+    if (added.length) {
+      setForm((f) => ({ ...f, images: [...f.images, ...added] }));
+      toast.success(
+        `${added.length} image add ho gayi — ${prettyBytes(before)} se ` +
+          `${prettyBytes(after)} (${Math.round((1 - after / before) * 100)}% halki)`
+      );
+    }
+    if (problems.length) toast.error(problems.join(' | '));
+    setUploadMsg('');
+    setUploading(false);
   };
 
   const margin = useMemo(() => {
@@ -343,19 +393,39 @@ export default function PartnerProductForm() {
             )}
 
             <div className="img-upload-row">
+              <label className="btn btn-brand btn-sm upload-btn">
+                <Icon.Upload size={15} />
+                {uploading ? 'Upload ho rahi hai…' : 'Computer se image chunein'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={onPickFiles}
+                  disabled={uploading}
+                  hidden
+                />
+              </label>
+
               <button type="button" className="btn btn-ghost btn-sm" onClick={addImagePath}>
-                <Icon.Plus size={15} /> Add image path
+                <Icon.Plus size={15} /> Path daalein
               </button>
+
               <span className="hint">
-                Upload ke liye mujhe image bhej dein — main file yahan rakh dunga. Filhaal
-                path daalein, jaise <code>/images/products/milk-poster.jpeg</code>
+                {uploadMsg ||
+                  'Apni photo chunein — khud hi compress ho jayegi aur seedha live ho jayegi.'}
               </span>
             </div>
 
             <div className="img-list">
               {form.images.map((src, i) => (
                 <div key={src + i} className="img-item">
-                  <img src={src} alt="" loading="lazy" />
+                  <ProductImage
+                    src={src}
+                    alt=""
+                    loading="lazy"
+                    preferThumb
+                    onError={() => removeItem('images', i)}
+                  />
                   {i === 0 && <span className="badge badge-brand img-main">Main</span>}
                   <div className="img-item-tools">
                     <button type="button" className="icon-btn" disabled={i === 0}

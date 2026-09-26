@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import Icon, { ICON_MAP } from '../components/Icons';
 import Picture from '../components/Picture';
+import ProductImage from '../components/ProductImage';
 import ProductCard from '../components/ProductCard';
 import { ErrorState, Loader } from '../components/Feedback';
 import { useToast } from '../components/Toast';
@@ -206,9 +207,10 @@ export default function ProductDetail() {
           {/* Gallery */}
           <div className="pd-gallery reveal">
             <div className="pd-main">
-              <Picture
+              <ProductImage
                 src={images[activeImg]}
                 alt={product.name}
+                loading="eager"
                 sizes="(max-width: 900px) 94vw, 58vw"
               />
               <div className="pd-main-badges">
@@ -239,7 +241,7 @@ export default function ProductDetail() {
                     onClick={() => setActiveImg(i)}
                     aria-label={`View image ${i + 1} of ${images.length}`}
                   >
-                    <Picture src={src} alt="" loading="lazy" />
+                    <ProductImage src={src} alt="" loading="lazy" preferThumb />
                   </button>
                 ))}
               </div>

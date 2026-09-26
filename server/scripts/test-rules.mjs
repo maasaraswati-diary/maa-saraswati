@@ -57,7 +57,16 @@ const n = (v) => ({ doubleValue: Number(v) });
 const b = (v) => ({ booleanValue: Boolean(v) });
 const arr = (v) => ({ arrayValue: { values: v } });
 
+/** A value that is already in Firestore's own shape is passed through as is. */
+const isWrapped = (v) =>
+  v &&
+  typeof v === 'object' &&
+  ['stringValue', 'bytesValue', 'doubleValue', 'integerValue', 'booleanValue',
+    'timestampValue', 'nullValue', 'arrayValue', 'mapValue',
+  ].some((k) => k in v);
+
 function restify(value) {
+  if (isWrapped(value)) return value;
   if (Array.isArray(value)) return arr(value.map(restify));
   if (value && typeof value === 'object') {
     const fields = {};
@@ -235,6 +244,51 @@ check('owner can pull a product off the storefront', await drop('/shop/p_new', a
 check('owner can delete a submission', await drop('/products/p_spoof', asOwner));
 check('nobody can write a user profile that is not theirs', !(await write('/users/someone-else', { a: 1 }, asPartner)));
 check('a partner can write their own profile', await write(`/users/${encodeURIComponent('uid-' + PARTNER)}`, { shop: 'Ram Dairy' }, asPartner));
+
+/* ----------------------------------------------------------------- uploads */
+// Stored as raw WebP bytes, which is a bytesValue on the REST API.
+const bytes = (n) => ({ bytesValue: Buffer.alloc(n, 7).toString('base64') });
+
+const upload = (over = {}) => ({
+  ownerEmail: PARTNER,
+  name: 'paneer.jpg',
+  large: bytes(80_000),
+  thumb: bytes(20_000),
+  mime: 'image/webp',
+  width: 1100,
+  height: 1100,
+  bytes: 80_000,
+  createdAt: '2026-01-03T00:00:00.000Z',
+  ...over,
+});
+
+// The emulator does not relax rules for REST callers, so the fixture has to go
+// in with the Admin SDK the way the other collections do.
+await admin.collection('uploads').doc('img_seed').set({
+  ownerEmail: OWNER,
+  name: 'seed.jpg',
+  large: Buffer.alloc(80_000, 7),
+  thumb: Buffer.alloc(20_000, 7),
+  mime: 'image/webp',
+  width: 1100,
+  height: 1100,
+  bytes: 80_000,
+  createdAt: '2026-01-03T00:00:00.000Z',
+});
+
+check('anyone can read an uploaded picture', await read('/uploads/img_seed'));
+check('a partner can upload a picture for themselves', await write('/uploads/img_p', upload(), asPartner));
+check('a partner cannot upload as somebody else', !(await write('/uploads/img_s', upload({ ownerEmail: OTHER }), asPartner)));
+check(
+  'a partner cannot upload a picture past the size ceiling',
+  !(await write('/uploads/img_big', upload({ large: bytes(1_000_000) }), asPartner))
+);
+check('a partner cannot change an existing picture', !(await write('/uploads/img_p', upload(), asPartner)));
+check('a partner cannot delete a picture', !(await drop('/uploads/img_p', asPartner)));
+check('a partner cannot delete the shop picture', !(await drop('/uploads/img_seed', asPartner)));
+check('the owner can delete a picture', await drop('/uploads/img_p', asOwner));
+check('the owner can upload too', await write('/uploads/img_o', upload({ ownerEmail: OWNER }), asOwner));
+check('the owner can delete the shop picture', await drop('/uploads/img_seed', asOwner));
 
 /* ---------------------------------------------------------- testimonials */
 const review = {
