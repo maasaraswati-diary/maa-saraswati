@@ -8,6 +8,8 @@ rules_version = '2';
 //              query filter. Safe to open up.
 //  products  - every submission, whatever its review state. Private: only the
 //              owner and the partner who submitted it can read it.
+//  testimonials - the customer reviews on the home page. Public to read,
+//              owner-only to write.
 //  enquiries - anyone may send one; only the owner can read them.
 
 service cloud.firestore {

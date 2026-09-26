@@ -511,10 +511,9 @@ export default function Home() {
           ) : testimonials.length === 0 ? (
             <p className="muted reveal">
               Customer stories will appear here soon.
-            </p>
-          ) : testimonials.length > SLIDER_AT ? (
+            </p>          ) : testimonials.length > SLIDER_AT ? (
             /* More than three: a slider, so nobody has to scroll a long list. */
-            <div className="tst-slider reveal reveal-d1">
+            <div className="tst-slider">
               <div className="tst-viewport">
                 <div
                   className="tst-track"
@@ -567,7 +566,7 @@ export default function Home() {
             /* Three or fewer: a plain grid reads better than a slider. */
             <div className="grid grid-3">
               {testimonials.map((t, i) => (
-                <div key={t.id || t.name + i} className={`reveal reveal-d${i + 1}`}>
+                <div key={t.id || t.name + i} className="tst-cell">
                   <QuoteCard t={t} />
                 </div>
               ))}

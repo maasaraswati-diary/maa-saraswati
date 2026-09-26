@@ -4488,3 +4488,28 @@
   gap: 12px;
   flex-wrap: wrap;
 }
+
+/* Reviews fade in on their own rather than waiting for the scroll-reveal
+   observer: they arrive from the network, so they are often not in the DOM
+   when that scan runs, and content must never depend on an animation. */
+@keyframes tstIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.tst-cell {
+  display: flex;
+  animation: tstIn 0.45s ease both;
+}
+
+.tst-cell:nth-child(1) { animation-delay: 0.02s; }
+.tst-cell:nth-child(2) { animation-delay: 0.10s; }
+.tst-cell:nth-child(3) { animation-delay: 0.18s; }
+
+.tst-cell .quote-card {
+  flex: 1;
+}
+
+.tst-slide .quote-card {
+  animation: tstIn 0.4s ease both;
+}
