@@ -291,6 +291,67 @@ export async function removeEnquiry(id) {
   await deleteDoc(doc(db, 'enquiries', id));
 }
 
+/* ------------------------------------------------------------------ drift */
+
+/** Fields the storefront copy has to agree on. */
+const SHOP_FIELDS = [
+  'name', 'shortName', 'category', 'tagline', 'taglineEnglish', 'price', 'mrp',
+  'unit', 'packSize', 'fat', 'veg', 'inStock', 'featured', 'rating',
+  'reviewCount', 'soldLabel', 'shortDescription', 'description', 'images',
+  'image', 'highlights', 'features', 'nutrition', 'usage', 'faqs', 'slug',
+];
+
+/**
+ * Owner-only. Brings the storefront back in line with the approved products.
+ *
+ * The two copies can drift - an edit made while the storefront copy was written
+ * at a different moment, say - and a customer would then see a stale picture or
+ * price with no sign of it anywhere. Called when the owner opens the panel, so
+ * the website repairs itself instead of waiting for someone to notice.
+ */
+export async function syncShopWithApproved(products) {
+  let repaired = 0;
+  const removed = [];
+
+  for (const p of products) {
+    if (p.status !== 'approved') continue;
+    const live = await getDoc(doc(db, LIVE, p.id));
+
+    if (!live.exists) {
+      const { id, ...rest } = p;
+      await setDoc(doc(db, LIVE, id), { ...rest, status: 'approved' });
+      repaired += 1;
+      continue;
+    }
+
+    const current = live.data();
+    const patch = {};
+    for (const key of SHOP_FIELDS) {
+      if (JSON.stringify(current[key] ?? null) !== JSON.stringify(p[key] ?? null)) {
+        patch[key] = p[key] ?? null;
+      }
+    }
+    if (Object.keys(patch).length) {
+      await setDoc(doc(db, LIVE, p.id), patch, { merge: true });
+      repaired += 1;
+    }
+  }
+
+  // A product that is no longer approved must not stay on sale.
+  const live = await getDocs(collection(db, LIVE));
+  const approvedIds = new Set(
+    products.filter((p) => p.status === 'approved').map((p) => p.id)
+  );
+  for (const d of live.docs) {
+    if (!approvedIds.has(d.id)) {
+      await deleteDoc(d.ref);
+      removed.push(d.id);
+    }
+  }
+
+  return { repaired, removed };
+}
+
 /* ------------------------------------------------------------------ images */
 
 // Cloud Storage would be the natural home for uploads, but creating a bucket

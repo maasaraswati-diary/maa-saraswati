@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import Icon from '../../components/Icons';
 import ProductImage from '../../components/ProductImage';
@@ -16,6 +16,7 @@ import {
   removeEnquiry,
   approveProduct,
   rejectProduct,
+  syncShopWithApproved,
 } from '../../store/db';
 import { formatPrice } from '../../api';
 
@@ -62,6 +63,37 @@ export default function PartnerDashboard() {
     [user?.email, isOwner, pathname, search]
   );
   const enqs = useFetch(() => (isOwner ? fetchEnquiries() : Promise.resolve([])), [isOwner]);
+
+  /**
+   * The storefront keeps its own copy of every approved product. If those two
+   * copies ever drift - a picture saved on one side only - a customer sees a
+   * stale image with nothing to indicate it. Only the owner can put a document
+   * in the storefront collection, so this runs when the owner opens the panel
+   * and quietly lines them up again.
+   */
+  useEffect(() => {
+    if (!isOwner || !mine.data?.length) return;
+    let cancelled = false;
+
+    syncShopWithApproved(mine.data)
+      .then(({ repaired, removed }) => {
+        if (cancelled || (!repaired && !removed.length)) return;
+        toast.info(
+          `Storefront refreshed: ${repaired} product(s) brought up to date` +
+            (removed.length ? `, ${removed.length} unpublished` : '') +
+            '.'
+        );
+        mine.reload();
+      })
+      .catch(() => {
+        /* not being able to repair is not worth interrupting the owner for */
+      });
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOwner, mine.data]);
 
   const list = useMemo(() => {
     const all = mine.data || [];
