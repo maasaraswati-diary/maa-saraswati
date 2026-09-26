@@ -55,7 +55,7 @@ const VALUES = [
 
 const TEAM = [
   {
-    name: 'Ramesh Yadav',
+    name: 'Deepak Sharma',
     role: 'Founder & Plant Head',
     text: 'Started with one cow in 1998. Still checks the first batch of the morning, every morning.',
   },
@@ -109,7 +109,7 @@ export default function About() {
             </h2>
             <div className="reveal reveal-d2">
               <p className="pd-para">
-                In 1998, Ramesh Yadav milked one cow and sold the milk to
+                In 1998, Deepak Sharma milked one cow and sold the milk to
                 thirty families on Gopal Mandi Road. He carried it in a steel
                 can, twice a day, and everyone on that street knew him by name.
               </p>
