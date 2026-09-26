@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import Icon from './Icons';
 import { useScrollLock } from '../hooks';
+import { SITE } from '../site';
 import Logo from './Logo';
 
 const LINKS = [
@@ -38,16 +39,16 @@ export default function Navbar() {
       {/* Announcement strip */}
       <div className="topbar">
         <div className="container topbar-in">
-          <span className="topbar-item">
-            <Icon.Truck size={15} /> Free delivery on orders above ₹499
-          </span>
+          <a className="topbar-item topbar-link" href={SITE.emailHref}>
+            <Icon.Mail size={15} /> {SITE.email}
+          </a>
           <span className="topbar-sep" />
           <span className="topbar-item">
             <Icon.Snow size={15} /> Cold chain, farm to doorstep
           </span>
           <span className="topbar-sep" />
-          <a className="topbar-item topbar-link" href="tel:+919814391854">
-            <Icon.Phone size={15} /> +91 98143 91854
+          <a className="topbar-item topbar-link" href={SITE.phoneHref}>
+            <Icon.Phone size={15} /> {SITE.phone}
           </a>
         </div>
       </div>

@@ -146,30 +146,105 @@ export default function Home() {
   } = useFetch(() => getTestimonials(), []);
   const testimonials = tstData?.length ? tstData : TESTIMONIAL_FALLBACK;
 
-  /* One slide per testimonial. The track is a CSS scroll-snap strip, so the
-     dots and arrows just scroll it - no carousel library needed. */
+  /* The track is a CSS scroll-snap strip, so the arrows and dots just scroll
+     it - no carousel library needed. Several cards are visible at once: three
+     on a desktop, two on a tablet, one on a phone. */
   const trackRef = useRef(null);
-  const [page, setPage] = useState(0);
+  const [index, setIndex] = useState(0);
+  const [perView, setPerView] = useState(1);
+
+  // How far one card step is along the strip: card width plus the gap.
+  const step = () => {
+    const el = trackRef.current;
+    const slide = el?.firstElementChild;
+    if (!el || !slide) return 1;
+    const gap = parseFloat(getComputedStyle(el).columnGap) || 0;
+    return slide.getBoundingClientRect().width + gap;
+  };
 
   const goTo = (next) => {
     const el = trackRef.current;
     if (!el) return;
-    const i = Math.max(0, Math.min(testimonials.length - 1, next));
-    el.scrollTo({ left: el.clientWidth * i, behavior: 'smooth' });
-    setPage(i);
+    const last = Math.max(0, testimonials.length - perView);
+    const i = Math.max(0, Math.min(last, next));
+    el.scrollTo({ left: i * step(), behavior: 'smooth' });
+    setIndex(i);
   };
 
-  // Keep the dots in step when the visitor swipes or drags the strip.
+  // Keep the arrows and dots in step when the visitor swipes or drags.
   const onTrackScroll = () => {
     const el = trackRef.current;
     if (!el) return;
-    const i = Math.round(el.scrollLeft / Math.max(1, el.clientWidth));
-    setPage((p) => (p === i ? p : i));
+    const i = Math.round(el.scrollLeft / Math.max(1, step()));
+    setIndex((p) => (p === i ? p : i));
   };
 
+  // How many cards fit is decided in CSS; read it back so the arrows know when
+  // they have reached the end, and re-check whenever the layout changes.
   useEffect(() => {
-    if (page > Math.max(0, testimonials.length - 1)) setPage(0);
-  }, [testimonials.length, page]);
+    const el = trackRef.current;
+    if (!el) return undefined;
+
+    const measure = () => {
+      const slide = el.firstElementChild;
+      if (!slide) return;
+      const w = slide.getBoundingClientRect().width;
+      if (w > 0) setPerView(Math.max(1, Math.round(el.clientWidth / (w + 1))));
+    };
+    measure();
+
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [tstData, testimonials.length]);
+
+  useEffect(() => {
+    const last = Math.max(0, testimonials.length - perView);
+    setIndex((i) => (i > last ? last : i));
+  }, [testimonials.length, perView]);
+
+  /* Auto-advance. It stops the moment the visitor takes over: hovering,
+     tapping, or using the arrows, and it never runs for someone who has asked
+     for reduced motion. It also idles while the section is off screen. */
+  const [playing, setPlaying] = useState(true);
+  const [hovered, setHovered] = useState(false);
+  const [inView, setInView] = useState(false);
+  const [calm, setCalm] = useState(false);
+  const canScroll = testimonials.length > perView;
+
+  useEffect(() => {
+    setCalm(
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+    );
+  }, []);
+
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return undefined;
+    const io = new IntersectionObserver(
+      ([e]) => setInView(e.isIntersecting),
+      { threshold: 0.3 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [tstData, testimonials.length]);
+
+  useEffect(() => {
+    if (!playing || hovered || !inView || calm || !canScroll) return undefined;
+    const last = Math.max(0, testimonials.length - perView);
+    const id = setInterval(() => {
+      const next = indexRef.current >= last ? 0 : indexRef.current + 1;
+      const el = trackRef.current;
+      if (el) el.scrollTo({ left: next * step(), behavior: 'smooth' });
+      setIndex(next);
+    }, 4200);
+    return () => clearInterval(id);
+  }, [playing, hovered, inView, calm, canScroll, perView, testimonials.length]);
+
+  const indexRef = useRef(0);
+  useEffect(() => {
+    indexRef.current = index;
+  }, [index]);
 
   const featured = useMemo(
     () => (data?.products || []).filter((p) => p.featured).slice(0, 6),
@@ -513,7 +588,13 @@ export default function Home() {
               Customer stories will appear here soon.
             </p>          ) : testimonials.length > SLIDER_AT ? (
             /* More than three: a slider, so nobody has to scroll a long list. */
-            <div className="tst-slider">
+            <div
+              className="tst-slider"
+              onMouseEnter={() => setHovered(true)}
+              onMouseLeave={() => setHovered(false)}
+              onFocusCapture={() => setHovered(true)}
+              onBlurCapture={() => setHovered(false)}
+            >
               <div className="tst-viewport">
                 <div
                   className="tst-track"
@@ -532,8 +613,8 @@ export default function Home() {
                 <button
                   type="button"
                   className="icon-btn"
-                  onClick={() => goTo(page - 1)}
-                  disabled={page === 0}
+                  onClick={() => goTo(index - 1)}
+                  disabled={index === 0}
                   aria-label="Previous reviews"
                 >
                   <Icon.ArrowLeft size={18} />
@@ -544,7 +625,9 @@ export default function Home() {
                     <button
                       key={t.id || i}
                       type="button"
-                      className={`tst-dot ${i === page ? 'on' : ''}`}
+                      className={`tst-dot ${
+                        i >= index && i < index + perView ? 'on' : ''
+                      }`}
                       onClick={() => goTo(i)}
                       aria-label={`Go to review ${i + 1}`}
                     />
@@ -554,12 +637,24 @@ export default function Home() {
                 <button
                   type="button"
                   className="icon-btn"
-                  onClick={() => goTo(page + 1)}
-                  disabled={page >= testimonials.length - 1}
+                  onClick={() => goTo(index + 1)}
+                  disabled={index + perView >= testimonials.length}
                   aria-label="Next reviews"
                 >
                   <Icon.ArrowRight size={18} />
                 </button>
+
+                {canScroll && (
+                  <button
+                    type="button"
+                    className="icon-btn tst-play"
+                    onClick={() => setPlaying((v) => !v)}
+                    aria-label={playing ? 'Pause reviews' : 'Play reviews'}
+                    title={playing ? 'Pause' : 'Play'}
+                  >
+                    {playing ? <Icon.Pause size={16} /> : <Icon.Play size={16} />}
+                  </button>
+                )}
               </div>
             </div>
           ) : (

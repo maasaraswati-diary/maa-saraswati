@@ -4513,3 +4513,112 @@
 .tst-slide .quote-card {
   animation: tstIn 0.4s ease both;
 }
+
+/* ============================================================
+   REVIEW SLIDER - several cards visible at once
+   --tst-per-view is the single source of truth: the CSS sizes the
+   cards from it, and the arrows read it back to know when they
+   have reached the end.
+   ============================================================ */
+
+.tst-slider {
+  --tst-per-view: 1;
+  --tst-gap: 22px;
+  position: relative;
+}
+
+@media (min-width: 620px) {
+  .tst-slider { --tst-per-view: 2; }
+}
+
+@media (min-width: 1000px) {
+  .tst-slider { --tst-per-view: 3; }
+}
+
+.tst-viewport {
+  overflow: hidden;
+  border-radius: var(--r-lg);
+}
+
+.tst-track {
+  display: flex;
+  gap: var(--tst-gap);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  padding: 4px;
+  /* Keep the strip from being stretched by its content, so the
+     percentage flex-basis below resolves against the visible width. */
+  width: 100%;
+}
+
+.tst-track::-webkit-scrollbar {
+  display: none;
+}
+
+.tst-slide {
+  flex: 0 0 calc(
+    (100% - (var(--tst-per-view) - 1) * var(--tst-gap)) / var(--tst-per-view)
+  );
+  scroll-snap-align: start;
+  display: flex;
+  min-width: 0;
+}
+
+.tst-slide .quote-card {
+  flex: 1;
+  width: 100%;
+  margin: 0;
+  animation: tstIn 0.4s ease both;
+}
+
+/* A little shorter so three cards in a row stay balanced. */
+.tst-slide .quote-card blockquote {
+  font-size: 0.98rem;
+  line-height: 1.6;
+}
+
+.tst-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 22px;
+}
+
+.tst-dots {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tst-dot {
+  width: 9px;
+  height: 9px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--line);
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.tst-dot:hover {
+  background: var(--brand-soft);
+}
+
+.tst-dot.on {
+  background: var(--brand);
+  transform: scale(1.25);
+}
+
+/* Auto-advance toggle, sitting just after the arrows. */
+.tst-play {
+  margin-left: 6px;
+  opacity: 0.75;
+}
+
+.tst-play:hover {
+  opacity: 1;
+}

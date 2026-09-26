@@ -48,6 +48,16 @@ export const Icon = {
       <path d="M9 6l6 6-6 6" />
     </Svg>
   ),
+  Pause: (p) => (
+    <Svg {...p}>
+      <path d="M10 4v16M16 4v16" />
+    </Svg>
+  ),
+  Play: (p) => (
+    <Svg {...p}>
+      <path d="M7 4l12 8-12 8z" />
+    </Svg>
+  ),
   Check: (p) => (
     <Svg {...p}>
       <path d="M20 6L9 17l-5-5" />
