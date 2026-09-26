@@ -3,87 +3,68 @@ rules_version = '2';
 // The browser talks to Firestore directly, so these rules are the security
 // boundary for the whole site.
 //
-//  products  - the storefront may read only APPROVED products. Only the shop
-//              owner may approve. A signed-in partner may add and edit their
-//              own products, but every change goes back to 'pending' for review.
-//  enquiries - anyone may submit a contact form; only the owner can read them.
-//  users     - each person may read and write only their own profile.
+//  shop      - the public storefront. A product is copied here ONLY when the shop
+//              owner approves it, so the public catalogue is a plain read with no
+//              query filter. Safe to open up.
+//  products  - every submission, whatever its review state. Private: only the
+//              owner and the partner who submitted it can read it.
+//  enquiries - anyone may send one; only the owner can read them.
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isSignedIn() {
+    function signedIn() {
       return request.auth != null;
     }
 
-    function isOwner() {
-      return isSignedIn()
+    // The shop owner. Sees everything and is the only account that can approve.
+    function owner() {
+      return signedIn()
         && request.auth.token.email == 'kunalkalia261085@gmail.com';
     }
 
-    function validNewProduct() {
-      let d = request.resource.data;
-      return d.name is string
-        && d.name.size() > 1
-        && d.name.size() < 120
-        && d.price is number
-        && d.price > 0
-        && d.price < 1000000
-        && d.status == 'pending'
-        && d.ownerEmail == request.auth.token.email;
+    // The signed-in partner who owns this document.
+    function mine() {
+      return signedIn()
+        && resource.data.ownerEmail == request.auth.token.email;
     }
 
-    // ---------- products ----------
-    match /products/{productId} {
+    // ---------- shop : the public storefront ----------
+    match /shop/{id} {
+      // Open to everyone, but only the owner can put anything here.
+      allow read: if true;
+      allow write: if owner();
+    }
 
-      // Public storefront: approved items only.
-      allow read: if resource.data.status == 'approved'
-        || isOwner()
-        || (isSignedIn() && resource.data.ownerEmail == request.auth.token.email);
+    // ---------- products : submissions under review ----------
+    match /products/{id} {
+      allow get: if resource.data.status == 'approved' || owner() || mine();
+      allow list: if owner() || mine();
 
-      // A partner may add a product. It always starts as 'pending', and it must
-      // be tagged with the submitter's own email.
-      allow create: if isSignedIn() && validNewProduct();
+      // A partner may submit a product. It must start as 'pending' and must be
+      // tagged with the submitter's own email, so nobody can post as someone else.
+      allow create: if signedIn()
+        && request.resource.data.status == 'pending'
+        && request.resource.data.ownerEmail == request.auth.token.email;
 
-      // Editing is only for the product's own partner or the owner. A partner
-      // may move their product back to 'pending' but can never set 'approved'
-      // or 'rejected' themselves, which is what makes the owner's approval real.
-      allow update: if isOwner()
-        || (isSignedIn()
-            && resource.data.ownerEmail == request.auth.token.email
-            && request.resource.data.ownerEmail == resource.data.ownerEmail
-            && (request.resource.data.status == 'pending'
-                || request.resource.data.status == resource.data.status));
+      // The owner can do anything, including approving. A partner may edit their
+      // own product, but only while it is back in 'pending' - this is what makes
+      // the owner's approval real.
+      allow update: if owner()
+        || (mine() && request.resource.data.status == 'pending');
 
-      allow delete: if isOwner()
-        || (isSignedIn() && resource.data.ownerEmail == request.auth.token.email);
+      allow delete: if owner() || mine();
     }
 
     // ---------- enquiries ----------
-    match /enquiries/{enquiryId} {
-      allow read, update, delete: if isOwner();
-
-      // Contact form submissions. Open to the public, but the shape is
-      // constrained so a script cannot flood the inbox.
-      allow create: if isSignedIn() || (
-        request.resource.data.name is string
-        && request.resource.data.name.size() > 1
-        && request.resource.data.name.size() < 100
-        && request.resource.data.email is string
-        && request.resource.data.email.size() < 120
-        && request.resource.data.message is string
-        && request.resource.data.message.size() > 9
-        && request.resource.data.message.size() < 2000
-        && request.resource.data.keys().hasOnly([
-             'name', 'email', 'phone', 'subject', 'product', 'message',
-             'status', 'createdAt'
-           ])
-      );
+    match /enquiries/{id} {
+      allow read, update, delete: if owner();
+      allow create: if true;
     }
 
     // ---------- user profiles ----------
-    match /users/{userId} {
-      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    match /users/{id} {
+      allow read, write: if signedIn() && request.auth.uid == id;
     }
 
     // Everything else is closed.

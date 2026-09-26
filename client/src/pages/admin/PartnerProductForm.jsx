@@ -147,7 +147,7 @@ export default function PartnerProductForm() {
     };
     try {
       if (isEdit) {
-        await updateProduct(id, payload);
+        await updateProduct(id, payload, isOwner);
         toast.success(isOwner
           ? 'Product update ho gaya.'
           : 'Update ho gaya — dobara approve karne ke liye bhej diya gaya hai.');

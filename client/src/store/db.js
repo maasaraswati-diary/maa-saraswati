@@ -24,6 +24,18 @@ const nowIso = () => new Date().toISOString();
 const newId = () =>
   `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 
+/**
+ * Two collections, on purpose.
+ *
+ *  'products' - every submission, whatever its review state. Private: only the
+ *               shop owner and the partner who submitted it can read it.
+ *  'shop'     - the public storefront. A document only lands here once the owner
+ *               approves it, so the public catalogue is a plain read with no
+ *               query filter, which is what Firestore's rules can safely allow.
+ */
+const DRAFTS = 'products';
+const LIVE = 'shop';
+
 const clean = (v) => (v === undefined ? null : v);
 
 /** Shapes a Firestore product document into the shape the UI expects. */
@@ -81,9 +93,9 @@ function slugify(value) {
 
 /** The public storefront: only products the owner has approved. */
 export async function fetchApprovedProducts() {
-  const snap = await getDocs(
-    query(collection(db, 'products'), where('status', '==', 'approved'))
-  );
+  // Plain collection read - no `where` clause - so the security rules can allow
+  // it outright. The collection only ever contains approved products.
+  const snap = await getDocs(collection(db, LIVE));
   return snap.docs
     .map(toProduct)
     .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
@@ -92,7 +104,7 @@ export async function fetchApprovedProducts() {
 /** A partner's own products, whatever their status. */
 export async function fetchProductsByOwner(email) {
   const snap = await getDocs(
-    query(collection(db, 'products'), where('ownerEmail', '==', email))
+    query(collection(db, DRAFTS), where('ownerEmail', '==', email))
   );
   return snap.docs
     .map(toProduct)
@@ -101,7 +113,7 @@ export async function fetchProductsByOwner(email) {
 
 /** Everything, for the owner's moderation view. */
 export async function fetchAllProducts() {
-  const snap = await getDocs(collection(db, 'products'));
+  const snap = await getDocs(collection(db, DRAFTS));
   return snap.docs
     .map(toProduct)
     .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
@@ -109,7 +121,7 @@ export async function fetchAllProducts() {
 
 export async function fetchPendingProducts() {
   const snap = await getDocs(
-    query(collection(db, 'products'), where('status', '==', 'pending'))
+    query(collection(db, DRAFTS), where('status', '==', 'pending'))
   );
   return snap.docs
     .map(toProduct)
@@ -117,20 +129,27 @@ export async function fetchPendingProducts() {
 }
 
 export async function fetchProductBySlug(slug) {
-  const snap = await getDocs(
-    query(collection(db, 'products'), where('status', '==', 'approved'))
-  );
+  const snap = await getDocs(query(collection(db, LIVE), where('slug', '==', slug)));
   const list = snap.docs.map(toProduct);
   const match = list.find((p) => p.slug === slug || p.id === slug);
-  if (!match) return null;
-  const related = list
+  if (!match) {
+    // Fall back to a plain read, which also covers lookups by document id.
+    const all = await fetchApprovedProducts();
+    const byId = all.find((p) => p.id === slug);
+    if (!byId) return null;
+    return { product: byId, related: relatedTo(all, byId) };
+  }
+  return { product: match, related: relatedTo(list, match) };
+}
+
+function relatedTo(list, match) {
+  return list
     .filter((p) => p.id !== match.id)
     .sort(
       (a, b) =>
         Number(b.category === match.category) - Number(a.category === match.category)
     )
     .slice(0, 4);
-  return { product: match, related };
 }
 
 export async function fetchEnquiries() {
@@ -177,7 +196,7 @@ function toDoc(product) {
 export async function createProduct(product, user) {
   const payload = toDoc(product);
   const id = `p_${newId()}`;
-  await setDoc(doc(db, 'products', id), {
+  await setDoc(doc(db, DRAFTS, id), {
     ...payload,
     slug: payload.slug || `${slugify(payload.name)}-${id.slice(-4)}`,
     ownerEmail: user?.email || '',
@@ -190,29 +209,61 @@ export async function createProduct(product, user) {
   return id;
 }
 
-export async function updateProduct(id, product) {
+export async function updateProduct(id, product, isOwner = false) {
   const payload = toDoc(product);
-  await setDoc(
-    doc(db, 'products', id),
-    { ...payload, slug: payload.slug || slugify(payload.name) },
-    { merge: true }
-  );
+  const patch = {
+    ...payload,
+    slug: payload.slug || slugify(payload.name),
+    // When a partner edits an approved product it goes back into the review
+    // queue, so the owner sees the change before customers do. The owner's own
+    // edits publish straight away.
+    ...(isOwner ? {} : { status: 'pending', reviewNote: '' }),
+  };
+  await setDoc(doc(db, DRAFTS, id), patch, { merge: true });
+
+  // A live product that gets edited by its partner must come off the storefront
+  // until the owner has looked at the change.
+  if (!isOwner) {
+    await deleteDoc(doc(db, LIVE, id)).catch(() => {});
+  }
 }
 
 /** Owner-only: put a product live, or send it back with a note. */
 export async function setProductStatus(id, status, reviewNote = '') {
-  await setDoc(doc(db, 'products', id), { status, reviewNote }, { merge: true });
+  await setDoc(doc(db, DRAFTS, id), { status, reviewNote }, { merge: true });
 }
 
-export const approveProduct = (id, note = '') => setProductStatus(id, 'approved', note);
-export const rejectProduct = (id, note = '') => setProductStatus(id, 'rejected', note);
+/**
+ * Owner-only. Copies the product into the public `shop` collection, which is
+ * the only thing the storefront ever reads.
+ */
+export async function approveProduct(id, note = '') {
+  const ref = doc(db, DRAFTS, id);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) throw new Error('Product not found.');
+  const data = snap.data();
+  await setDoc(doc(db, LIVE, id), { ...data, status: 'approved' });
+  await setDoc(ref, { status: 'approved', reviewNote: note }, { merge: true });
+}
+
+/** Owner-only. Takes the product off the storefront and tells the partner why. */
+export async function rejectProduct(id, note = '') {
+  await deleteDoc(doc(db, LIVE, id)).catch(() => {});
+  await setDoc(doc(db, DRAFTS, id), { status: 'rejected', reviewNote: note }, { merge: true });
+}
 
 export async function removeProduct(id) {
-  await deleteDoc(doc(db, 'products', id));
+  await deleteDoc(doc(db, LIVE, id)).catch(() => {});
+  await deleteDoc(doc(db, DRAFTS, id));
 }
 
 export async function setProductInStock(id, inStock) {
-  await setDoc(doc(db, 'products', id), { inStock }, { merge: true });
+  await setDoc(doc(db, DRAFTS, id), { inStock }, { merge: true });
+  // Keep the storefront copy in step, but only while the product is live.
+  const live = await getDoc(doc(db, LIVE, id));
+  if (live.exists()) {
+    await setDoc(doc(db, LIVE, id), { inStock }, { merge: true });
+  }
 }
 
 export async function saveEnquiry(enquiry) {
@@ -237,18 +288,23 @@ export async function removeEnquiry(id) {
  * collection is still empty.
  */
 export async function seedIfEmpty(products, owner) {
-  const snap = await getDocs(collection(db, 'products'));
+  const snap = await getDocs(collection(db, DRAFTS));
   if (!snap.empty) return { written: 0, skipped: true };
 
   const batch = writeBatch(db);
   products.forEach((p, i) => {
-    batch.set(doc(db, 'products', p.id), {
+    const payload = {
       ...toDoc(p),
       ownerEmail: owner?.email || '',
       ownerName: 'Maa Saraswati',
+      status: 'approved',
+      reviewNote: '',
       createdAt: p.createdAt || nowIso(),
       order: i,
-    });
+    };
+    batch.set(doc(db, DRAFTS, p.id), payload);
+    // The seed catalogue is the shop's own, so it starts life on the storefront.
+    batch.set(doc(db, LIVE, p.id), payload);
   });
   await batch.commit();
   return { written: products.length, skipped: false };

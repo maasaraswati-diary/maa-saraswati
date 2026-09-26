@@ -68,9 +68,13 @@ export async function getAllProducts() {
   return snapshot.products;
 }
 
+/**
+ * Filtered + sorted catalogue. Returns `{ products }` because that is the shape
+ * the pages consume.
+ */
 export async function getProducts({ params = {}, sort } = {}) {
   const all = await getAllProducts();
-  return sortList(all.filter((p) => matches(p, params)), sort);
+  return { products: sortList(all.filter((p) => matches(p, params)), sort) };
 }
 
 export async function getCategories() {

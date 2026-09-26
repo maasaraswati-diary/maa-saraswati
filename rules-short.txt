@@ -1,0 +1,38 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function owner() {
+      return signedIn()
+        && request.auth.token.email == 'kunalkalia261085@gmail.com';
+    }
+    function mine() {
+      return signedIn()
+        && resource.data.ownerEmail == request.auth.token.email;
+    }
+    match /shop/{id} {
+      allow read: if true;
+      allow write: if owner();
+    }
+    match /products/{id} {
+      allow get: if resource.data.status == 'approved' || owner() || mine();
+      allow list: if owner() || mine();
+      allow create: if signedIn()
+        && request.resource.data.status == 'pending'
+        && request.resource.data.ownerEmail == request.auth.token.email;
+      allow update: if owner()
+        || (mine() && request.resource.data.status == 'pending');
+      allow delete: if owner() || mine();
+    }
+    match /enquiries/{id} {
+      allow read, update, delete: if owner();
+      allow create: if true;
+    }
+    match /users/{id} {
+      allow read, write: if signedIn() && request.auth.uid == id;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
