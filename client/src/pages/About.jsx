@@ -6,7 +6,7 @@ const TIMELINE = [
   {
     year: '1998',
     title: 'One cow, one neighbourhood',
-    text: 'Maa Saraswati started as a single hand-milked cow sold to 30 homes on Gopal Mandi Road. The milk went out in steel cans, twice a day.',
+    text: 'Maa Saraswati started as a single hand-milked cow sold to 30 homes in Kahnuwaan Chowk, Gurdaspur. The milk went out in steel cans, twice a day.',
   },
   {
     year: '2006',
@@ -110,8 +110,9 @@ export default function About() {
             <div className="reveal reveal-d2">
               <p className="pd-para">
                 In 1998, Deepak Sharma milked one cow and sold the milk to
-                thirty families on Gopal Mandi Road. He carried it in a steel
-                can, twice a day, and everyone on that street knew him by name.
+                thirty families in Kahnuwaan Chowk, Gurdaspur. He carried it in a
+                steel can, twice a day, and everyone on that street knew him by
+                name.
               </p>
               <p className="pd-para">
                 Nothing about the product changed. What changed was the scale —

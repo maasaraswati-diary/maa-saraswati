@@ -82,7 +82,7 @@ const FAQS = [
   },
   {
     q: 'Can I buy your products in person?',
-    a: 'Yes. Our retail counter at Gopal Mandi Road is open daily from 6:00 AM to 9:00 PM, and our products are stocked at 30+ neighbourhood stores.',
+    a: 'Yes. Our counter at Kahnuwaan Chowk, Gurdaspur is open daily from 6:00 AM to 9:00 PM, and our products are stocked at 30+ neighbourhood stores.',
   },
   {
     q: 'Are all products vegetarian?',
