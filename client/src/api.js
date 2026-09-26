@@ -1,10 +1,14 @@
 /**
- * Base URL for API calls.
+ * Price formatting, plus an HTTP client that the site no longer depends on.
  *
- * Empty by default, which keeps requests same-origin at `/api/...`. That works
- * out of the box on Firebase Hosting because hosting rewrites `/api/**` to the
- * Cloud Function. Set VITE_API_BASE only if the API is hosted on a different
- * domain (for example a separate Render or Railway service).
+ * The storefront and the partner panel talk to Cloud Firestore straight from the
+ * browser - see `store/db.js` - so there is no application server and no
+ * `/api/...` rewriting in the hosting config. The request helpers below are
+ * kept only as a fallback for the enquiry form, and the admin calls in here
+ * refer to the old JWT API that has been replaced by Firebase Auth.
+ *
+ * Nothing sets VITE_API_BASE any more; if you ever do point it somewhere, the
+ * calls must be same-origin or CORS-enabled.
  */
 const API_BASE = (import.meta.env?.VITE_API_BASE || '').replace(/\/$/, '');
 
