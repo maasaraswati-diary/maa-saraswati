@@ -14,8 +14,8 @@ export const SITE = {
   whatsapp: 'https://wa.me/919814391854',
 
   // --- email ---
-  email: 'maasaraswati449@gmail.com',
-  emailHref: 'mailto:maasaraswati449@gmail.com',
+  email: 'kunalkalia261085@gmail.com',
+  emailHref: 'mailto:kunalkalia261085@gmail.com',
 
   // --- address ---
   addressLines: [

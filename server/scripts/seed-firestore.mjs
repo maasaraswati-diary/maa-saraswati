@@ -110,7 +110,7 @@ async function seedEnquiries() {
 }
 
 async function seedAdmin() {
-  const email = (process.env.ADMIN_EMAIL || 'maasaraswati449@gmail.com').toLowerCase();
+  const email = (process.env.ADMIN_EMAIL || 'kunalkalia261085@gmail.com').toLowerCase();
   const password = process.env.ADMIN_PASSWORD || 'admin123';
 
   const existing = await db.collection('users').where('email', '==', email).limit(1).get();

@@ -38,7 +38,7 @@ async function call(path, { method = 'GET', body, token, raw } = {}) {
 }
 
 const ADMIN_EMAIL =
-  process.env.ADMIN_EMAIL || 'maasaraswati449@gmail.com';
+  process.env.ADMIN_EMAIL || 'kunalkalia261085@gmail.com';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
 console.log(`\n--- smoke test against ${BASE} (project ${PROJECT}) ---\n`);

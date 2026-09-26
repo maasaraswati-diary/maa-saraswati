@@ -29,7 +29,7 @@ Go to **http://localhost:5180/admin**
 
 | | |
 |---|---|
-| Email | `maasaraswati449@gmail.com` |
+| Email | `kunalkalia261085@gmail.com` |
 | Password | `admin123` |
 
 These live in `server/.env`. The admin account is created automatically the

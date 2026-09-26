@@ -65,7 +65,7 @@ export default function AdminLogin() {
                   className="input"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="maasaraswati449@gmail.com"
+                  placeholder="kunalkalia261085@gmail.com"
                   autoComplete="username"
                 />
               </div>
@@ -123,7 +123,7 @@ export default function AdminLogin() {
           <div className="login-hint">
             <Icon.Info size={16} />
             <p>
-              <strong>Default login:</strong> maasaraswati449@gmail.com / admin123
+              <strong>Default login:</strong> kunalkalia261085@gmail.com / admin123
               <br />
               <span className="muted">
                 Change these in <code>server/.env</code> before going live.
