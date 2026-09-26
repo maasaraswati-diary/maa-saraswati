@@ -60,7 +60,7 @@ const TEAM = [
     text: 'Started with one cow in 1998. Still checks the first batch of the morning, every morning.',
   },
   {
-    name: 'Sunita Yadav',
+    name: 'Isha Kalia',
     role: 'Quality & Testing',
     text: 'Runs the lab and the batch records. Has rejected more milk than she has accepted.',
   },
