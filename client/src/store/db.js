@@ -303,10 +303,9 @@ export async function saveProductImage({ large, thumb, name }, user) {
   await setDoc(doc(db, 'uploads', id), {
     ownerEmail: user?.email || '',
     name: name || 'image',
-    // Stored as raw bytes and read back as a data URL, so Firestore does not
-    // inflate the base64 any further.
-    large: bytesFromDataUrl(large.dataUrl),
-    thumb: bytesFromDataUrl(thumb.dataUrl),
+    // Base64 text, so reading it back is a plain string with nothing to convert.
+    large: base64Of(large.dataUrl),
+    thumb: base64Of(thumb.dataUrl),
     mime: 'image/webp',
     width: large.w,
     height: large.h,
@@ -321,44 +320,24 @@ export async function fetchProductImage(id) {
   const snap = await getDoc(doc(db, 'uploads', id));
   if (!snap.exists()) return null;
   const d = snap.data();
+  const large = dataUrlOf(d.large);
   return {
-    large: dataUrlFromBytes(d.large),
-    thumb: dataUrlFromBytes(d.thumb) || dataUrlFromBytes(d.large),
+    large,
+    thumb: dataUrlOf(d.thumb) || large,
     width: d.width,
     height: d.height,
   };
 }
 
-const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-
-/** data URL -> array of bytes, the form Firestore stores natively. */
-function bytesFromDataUrl(dataUrl) {
-  const base64 = String(dataUrl).split(',')[1] || '';
-  const clean = base64.replace(/[^A-Za-z0-9+/]/g, '');
-  const bytes = new Uint8Array((clean.length * 3) >> 2);
-  let p = 0;
-  for (let i = 0; i < clean.length; i += 4) {
-    const n =
-      (B64.indexOf(clean[i]) << 18) |
-      (B64.indexOf(clean[i + 1]) << 12) |
-      ((B64.indexOf(clean[i + 2]) & 63) << 6) |
-      (B64.indexOf(clean[i + 3]) & 63);
-    if (p < bytes.length) bytes[p++] = (n >> 16) & 255;
-    if (p < bytes.length) bytes[p++] = (n >> 8) & 255;
-    if (p < bytes.length) bytes[p++] = n & 255;
-  }
-  return bytes;
-}
-
-/** Stored bytes -> data URL. */
-function dataUrlFromBytes(bytes) {
-  if (!bytes) return '';
-  const arr =
-    bytes instanceof Uint8Array ? bytes : Uint8Array.from(Object.values(bytes));
-  let out = '';
-  for (let i = 0; i < arr.length; i += 1) out += String.fromCharCode(arr[i]);
-  return `data:image/webp;base64,${btoa(out)}`;
-}
+/**
+ * Firestore's `bytes` type round-trips through shapes that differ between the
+ * SDK builds, and a picture is already compressed WebP, so the base64 text is
+ * stored as an ordinary string. That is a third larger than raw bytes, which
+ * still leaves a document far below Firestore's 1 MB ceiling, and it removes a
+ * whole class of serialisation problems.
+ */
+const base64Of = (dataUrl) => String(dataUrl).split(',')[1] || '';
+const dataUrlOf = (base64) => (base64 ? `data:image/webp;base64,${base64}` : '');
 
 /* ------------------------------------------------------------ testimonials */
 

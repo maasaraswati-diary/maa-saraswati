@@ -4667,3 +4667,14 @@
 @media (prefers-reduced-motion: reduce) {
   .img-loading { animation: none; }
 }
+
+.img-missing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: none;
+  background: #f3f6f4;
+  color: #93a49b;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+}

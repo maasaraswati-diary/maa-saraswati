@@ -11,7 +11,7 @@ import { fetchProductImage, isUploadRef, uploadIdFromRef } from '../store/db';
  * customer pays for it once and every later visit reads it straight off disk.
  */
 
-const CACHE_PREFIX = 'ms-img:';
+const CACHE_PREFIX = 'ms-img:v2:';
 const CACHE_LIMIT_MB = 4;
 
 function readCache(key) {
@@ -45,6 +45,7 @@ export default function ProductImage({
 }) {
   const id = isUploadRef(src) ? uploadIdFromRef(src) : null;
   const [url, setUrl] = useState(() => (id ? readCache(id) : null));
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     if (!id || url) return undefined;
@@ -52,13 +53,22 @@ export default function ProductImage({
 
     fetchProductImage(id)
       .then((img) => {
-        if (cancelled || !img) return;
+        if (cancelled) return;
+        if (!img || !img.large) {
+          // Surfaced rather than swallowed: a picture that silently never
+          // appears is far harder to diagnose than one that complains.
+          console.warn('[ProductImage] no image data for', id);
+          setFailed(true);
+          return;
+        }
         const picked = preferThumb ? img.thumb || img.large : img.large;
         writeCache(id, picked);
         setUrl(picked);
       })
-      .catch(() => {
-        /* leave the fallback placeholder in place */
+      .catch((err) => {
+        if (cancelled) return;
+        console.warn('[ProductImage] could not load', id, err?.message || err);
+        setFailed(true);
       });
 
     return () => {
@@ -66,9 +76,16 @@ export default function ProductImage({
     };
   }, [id, preferThumb, url]);
 
-  // While an uploaded picture is on its way, render nothing rather than a
-  // broken image icon.
+  // While an uploaded picture is on its way, render a placeholder rather than a
+  // broken image icon; if it never arrives, say so rather than spin forever.
   if (id && !url) {
+    if (failed) {
+      return (
+        <span className="img-loading img-missing" title="Image could not be loaded">
+          <span>image missing</span>
+        </span>
+      );
+    }
     return <span className={`img-loading ${className || ''}`} aria-hidden="true" />;
   }
 
