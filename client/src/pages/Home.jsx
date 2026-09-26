@@ -66,21 +66,21 @@ const PROCESS = [
 
 const TESTIMONIALS = [
   {
-    name: 'Sunita Deshpande',
+    name: 'Rahul',
+    role: 'Runs a Sweet House, Gurdaspur',
+    text: 'We use their paneer for our barfi and peda. The protein is high, the texture holds, and the delivery has never been late once.',
+    rating: 5,
+  },
+  {
+    name: 'Davinder Singh',
     role: 'Customer since 2011',
     text: 'I have bought their milk every week for fourteen years. It is the only milk my father will drink, and the only one my children finish.',
     rating: 5,
   },
   {
-    name: 'Mahir',
-    role: 'Runs a Sweet House',
-    text: 'We use their paneer for our barfi and peda. The protein is high, the texture holds, and the delivery has never been late once.',
-    rating: 5,
-  },
-  {
-    name: 'Dr. Meera Iyer',
-    role: 'Paediatrician, Bhopal',
-    text: 'I recommend it to my own patients. It is pasteurised, it is consistently standardised, and the labelling is honest.',
+    name: 'Harbhajan Singh',
+    role: 'Household customer, Kahnuwaan Chowk',
+    text: 'The ghee is clean and the price is fair. I order monthly for the whole family and it always reaches before 7 in the morning.',
     rating: 5,
   },
 ];
@@ -92,7 +92,7 @@ const FAQS = [
   },
   {
     q: 'Do you deliver to my area?',
-    a: 'We currently run 40+ delivery routes across Bhopal. Send us an enquiry with your pin code and we will confirm your slot and the minimum order.',
+    a: 'We currently run 40+ delivery routes across Gurdaspur. Send us an enquiry with your pin code and we will confirm your slot and the minimum order.',
   },
   {
     q: 'What is the minimum order for home delivery?',
