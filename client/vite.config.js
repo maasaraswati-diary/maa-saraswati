@@ -22,5 +22,16 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
+    rollupOptions: {
+      output: {
+        // Firebase is large and changes rarely, so it gets its own long-lived
+        // chunk instead of being re-downloaded on every deploy.
+        manualChunks(id) {
+          if (id.includes('node_modules/@firebase')) return 'firebase';
+          if (id.includes('node_modules/react')) return 'react';
+          return undefined;
+        },
+      },
+    },
   },
 });

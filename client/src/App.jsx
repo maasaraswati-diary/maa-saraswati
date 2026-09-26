@@ -1,11 +1,12 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 import EnquiryFab from './components/EnquiryFab';
-import { getToken } from './api';
+import OfflineNotice from './components/OfflineNotice';
+import { useAuth } from './context/AuthContext';
 import { useReveal } from './hooks';
 
 import Home from './pages/Home';
@@ -15,29 +16,44 @@ import About from './pages/About';
 import Contact from './pages/Contact';
 import NotFound from './pages/NotFound';
 
-import AdminLogin from './pages/admin/AdminLogin';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import ProductForm from './pages/admin/ProductForm';
+// The partner panel pulls in firebase/auth, so it loads only when someone visits
+// it. That keeps the public storefront's bundle small.
+const PartnerLogin = lazy(() => import('./pages/admin/PartnerLogin'));
+const PartnerDashboard = lazy(() => import('./pages/admin/PartnerDashboard'));
+const PartnerProductForm = lazy(() => import('./pages/admin/PartnerProductForm'));
 
-/** Sends unauthenticated visitors to the login screen. */
-function RequireAdmin({ children }) {
-  const location = useLocation();
-  if (!getToken()) {
-    return <Navigate to="/admin" replace state={{ from: location.pathname }} />;
-  }
+function FullPageLoader() {
+  return (
+    <div className="loader" style={{ minHeight: '60vh' }}>
+      <div className="loader-ring" aria-hidden="true">
+        <span />
+        <span />
+        <span />
+      </div>
+      <p className="muted">Loading…</p>
+    </div>
+  );
+}
+
+/** Sends visitors to the partner sign-in screen when not signed in. */
+function RequirePartner({ children }) {
+  const { user, ready, configured } = useAuth();
+  if (!configured) return <FullPageLoader />;
+  if (!ready) return <FullPageLoader />;
+  if (!user) return <Navigate to="/partner" replace />;
   return children;
 }
 
 export default function App() {
   const location = useLocation();
-  const isAdmin = location.pathname.startsWith('/admin');
+  const isPartnerArea = location.pathname.startsWith('/partner');
 
   // Reveal animations re-scan after each route change.
   useReveal();
 
   useEffect(() => {
-    if (!isAdmin) window.scrollTo(0, 0);
-  }, [location.pathname, isAdmin]);
+    if (!isPartnerArea) window.scrollTo(0, 0);
+  }, [location.pathname, isPartnerArea]);
 
   return (
     <>
@@ -45,45 +61,53 @@ export default function App() {
       <Navbar />
 
       <main id="main">
-        <Routes>
+        <Suspense fallback={<FullPageLoader />}>
+          <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/products" element={<Products />} />
           <Route path="/products/:slug" element={<ProductDetail />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
 
-          <Route path="/admin" element={<AdminLogin />} />
+          {/* Partner panel */}
+          <Route path="/partner" element={<PartnerLogin />} />
           <Route
-            path="/admin/dashboard"
+            path="/partner/products"
             element={
-              <RequireAdmin>
-                <AdminDashboard />
-              </RequireAdmin>
+              <RequirePartner>
+                <PartnerDashboard />
+              </RequirePartner>
             }
           />
           <Route
-            path="/admin/products/new"
+            path="/partner/products/new"
             element={
-              <RequireAdmin>
-                <ProductForm />
-              </RequireAdmin>
+              <RequirePartner>
+                <PartnerProductForm />
+              </RequirePartner>
             }
           />
           <Route
-            path="/admin/products/:id"
+            path="/partner/products/:id"
             element={
-              <RequireAdmin>
-                <ProductForm />
-              </RequireAdmin>
+              <RequirePartner>
+                <PartnerProductForm />
+              </RequirePartner>
             }
           />
+
+          {/* Old admin paths now point at the partner panel */}
+          <Route path="/admin" element={<Navigate to="/partner" replace />} />
+          <Route path="/admin/*" element={<Navigate to="/partner" replace />} />
 
           <Route path="*" element={<NotFound />} />
-        </Routes>
+          </Routes>
+        </Suspense>
       </main>
 
-      {!isAdmin && <Footer />}
-      {!isAdmin && <EnquiryFab />}
+      {!isPartnerArea && <Footer />}
+      {!isPartnerArea && <EnquiryFab />}
+      {!isPartnerArea && <OfflineNotice />}
     </>
   );
 }

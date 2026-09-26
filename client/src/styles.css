@@ -3327,6 +3327,58 @@
 }
 
 /* ============================================================
+   OFFLINE / STALE-CATALOGUE NOTICE
+   ============================================================ */
+
+.offline-notice {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  z-index: 46;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(94vw, 560px);
+  padding: 11px 18px;
+  border-radius: var(--r-full);
+  background: rgba(6, 40, 24, 0.92);
+  color: #fff;
+  font-size: 0.86rem;
+  line-height: 1.4;
+  box-shadow: var(--sh-lg);
+  backdrop-filter: blur(10px);
+  animation: fadeUp 0.4s var(--ease);
+  transition: opacity 0.5s var(--ease), transform 0.5s var(--ease);
+}
+
+.offline-notice svg {
+  flex: none;
+  color: var(--gold);
+}
+
+.offline-notice strong {
+  font-weight: 700;
+}
+
+.offline-notice.leaving {
+  opacity: 0;
+  transform: translate(-50%, 12px);
+}
+
+.offline-notice .spin {
+  animation: spin 1.4s linear infinite;
+}
+
+@media (max-width: 720px) {
+  .offline-notice {
+    bottom: 76px;
+    font-size: 0.8rem;
+    padding: 10px 14px;
+  }
+}
+
+/* ============================================================
    ADMIN
    ============================================================ */
 
@@ -4289,4 +4341,54 @@
   .cta-stats {
     grid-template-columns: 1fr;
   }
+}
+
+/* ============================================================
+   PARTNER PANEL EXTRAS
+   ============================================================ */
+
+.badge-brand {
+  background: var(--brand);
+  color: var(--white);
+}
+
+.link-btn {
+  align-self: center;
+  margin-top: 14px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--brand);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.link-btn:hover {
+  color: var(--brand-deep);
+}
+
+.auth-switch {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.auth-switch button {
+  font-weight: 700;
+  color: var(--brand);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.review-note {
+  display: block;
+  max-width: 170px;
+  margin-top: 4px;
+  font-size: 0.76rem;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

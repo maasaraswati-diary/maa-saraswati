@@ -29,7 +29,7 @@ const COLUMNS = [
       { to: '/contact', label: 'Bulk Order Enquiry' },
       { to: '/contact#faq', label: 'Common Questions' },
       { to: '/products', label: 'Product Catalogue' },
-      { to: '/admin', label: 'Admin Login' },
+      { to: '/partner', label: 'Partner Login' },
     ],
   },
 ];
@@ -166,7 +166,7 @@ export default function Footer() {
             <span className="dot" />
             <span>100% Vegetarian Products</span>
             <span className="dot" />
-            <Link to="/admin">Admin</Link>
+            <Link to="/partner">Partner Panel</Link>
           </p>
         </div>
       </div>

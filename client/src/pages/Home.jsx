@@ -3,7 +3,8 @@ import { useMemo, useState } from 'react';
 import Icon from '../components/Icons';
 import ProductCard from '../components/ProductCard';
 import { CardSkeleton, ErrorState } from '../components/Feedback';
-import { api, formatPrice } from '../api';
+import { formatPrice } from '../api';
+import { getProducts } from '../catalogue';
 import { useFetch } from '../hooks';
 
 const STATS = [
@@ -126,7 +127,7 @@ function StarRow({ n = 5, size = 15 }) {
 }
 
 export default function Home() {
-  const { data, loading, error, reload } = useFetch(() => api.getProducts(), []);
+  const { data, loading, error, reload } = useFetch(() => getProducts(), []);
   const [openFaq, setOpenFaq] = useState(0);
   const [activeSlide, setActiveSlide] = useState(0);
 

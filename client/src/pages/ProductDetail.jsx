@@ -4,7 +4,8 @@ import Icon, { ICON_MAP } from '../components/Icons';
 import ProductCard from '../components/ProductCard';
 import { ErrorState, Loader } from '../components/Feedback';
 import { useToast } from '../components/Toast';
-import { api, discountPercent, formatPrice } from '../api';
+import { discountPercent, formatPrice } from '../api';
+import { getProduct } from '../catalogue';
 import { useFetch } from '../hooks';
 
 const TABS = [
@@ -35,7 +36,7 @@ export default function ProductDetail() {
   const { slug } = useParams();
   const toast = useToast();
   const { data, loading, error, reload } = useFetch(
-    () => api.getProduct(slug),
+    () => getProduct(slug),
     [slug]
   );
 

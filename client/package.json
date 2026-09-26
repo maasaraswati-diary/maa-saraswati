@@ -5,11 +5,13 @@
   "type": "module",
   "description": "React frontend for the MAA SARASWATI dairy products website",
   "scripts": {
+    "prebuild": "node scripts/sync-catalogue.mjs",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
+    "firebase": "^12.19.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.26.2"

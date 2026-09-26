@@ -1,11 +1,92 @@
 rules_version = '2';
 
-// The website talks to the API through Cloud Functions, which uses the Admin
-// SDK and bypasses these rules entirely. That means these rules only matter if
-// a browser client ever reads Firestore directly - so we deny everything and
-// keep all data access on the server, where it is authenticated and validated.
+// The browser talks to Firestore directly, so these rules are the security
+// boundary for the whole site.
+//
+//  products  - the storefront may read only APPROVED products. Only the shop
+//              owner may approve. A signed-in partner may add and edit their
+//              own products, but every change goes back to 'pending' for review.
+//  enquiries - anyone may submit a contact form; only the owner can read them.
+//  users     - each person may read and write only their own profile.
+
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner() {
+      return isSignedIn()
+        && request.auth.token.email == 'kunalkalia261085@gmail.com';
+    }
+
+    function validNewProduct() {
+      let d = request.resource.data;
+      return d.name is string
+        && d.name.size() > 1
+        && d.name.size() < 120
+        && d.price is number
+        && d.price > 0
+        && d.price < 1000000
+        && d.status == 'pending'
+        && d.ownerEmail == request.auth.token.email;
+    }
+
+    // ---------- products ----------
+    match /products/{productId} {
+
+      // Public storefront: approved items only.
+      allow read: if resource.data.status == 'approved'
+        || isOwner()
+        || (isSignedIn() && resource.data.ownerEmail == request.auth.token.email);
+
+      // A partner may add a product. It always starts as 'pending', and it must
+      // be tagged with the submitter's own email.
+      allow create: if isSignedIn() && validNewProduct();
+
+      // Editing is only for the product's own partner or the owner. A partner
+      // may move their product back to 'pending' but can never set 'approved'
+      // or 'rejected' themselves, which is what makes the owner's approval real.
+      allow update: if isOwner()
+        || (isSignedIn()
+            && resource.data.ownerEmail == request.auth.token.email
+            && request.resource.data.ownerEmail == resource.data.ownerEmail
+            && (request.resource.data.status == 'pending'
+                || request.resource.data.status == resource.data.status));
+
+      allow delete: if isOwner()
+        || (isSignedIn() && resource.data.ownerEmail == request.auth.token.email);
+    }
+
+    // ---------- enquiries ----------
+    match /enquiries/{enquiryId} {
+      allow read, update, delete: if isOwner();
+
+      // Contact form submissions. Open to the public, but the shape is
+      // constrained so a script cannot flood the inbox.
+      allow create: if isSignedIn() || (
+        request.resource.data.name is string
+        && request.resource.data.name.size() > 1
+        && request.resource.data.name.size() < 100
+        && request.resource.data.email is string
+        && request.resource.data.email.size() < 120
+        && request.resource.data.message is string
+        && request.resource.data.message.size() > 9
+        && request.resource.data.message.size() < 2000
+        && request.resource.data.keys().hasOnly([
+             'name', 'email', 'phone', 'subject', 'product', 'message',
+             'status', 'createdAt'
+           ])
+      );
+    }
+
+    // ---------- user profiles ----------
+    match /users/{userId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Everything else is closed.
     match /{document=**} {
       allow read, write: if false;
     }

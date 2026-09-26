@@ -134,11 +134,11 @@ export default function Navbar() {
               </NavLink>
             ))}
             <NavLink
-              to="/admin"
+              to="/partner"
               style={{ '--i': LINKS.length }}
               className="drawer-link drawer-admin"
             >
-              Admin Panel
+              Partner Panel
               <Icon.Lock size={17} />
             </NavLink>
           </nav>

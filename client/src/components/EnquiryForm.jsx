@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import Icon from './Icons';
 import { useToast } from './Toast';
+import { saveEnquiry } from '../store/db';
+import { isFirebaseConfigured } from '../firebase';
 import { api } from '../api';
 
 export const SUBJECTS = [
@@ -62,13 +64,53 @@ export default function EnquiryForm({
       return;
     }
     setSending(true);
+    const payload = { ...form, product: hiddenProduct };
     try {
-      const res = await api.sendEnquiry({ ...form, product: hiddenProduct });
+      // Firestore is the primary path now; the REST API remains a fallback for a
+      // self-hosted backend.
+      if (isFirebaseConfigured) {
+        await saveEnquiry(payload);
+        setDone(true);
+        setForm({ ...EMPTY });
+        toast.success(
+          `Thank you ${form.name.split(' ')[0]}! We have received your enquiry.`
+        );
+        onDone?.({ via: 'firestore' });
+        return;
+      }
+      const res = await api.sendEnquiry(payload);
       setDone(true);
       setForm({ ...EMPTY });
       toast.success(res.message);
       onDone?.(res);
     } catch (err) {
+      // The API is unreachable. Rather than lose the enquiry, hand the customer
+      // a pre-filled WhatsApp message so the lead still reaches us.
+      if (err.status === 0) {
+        const body = [
+          `Name: ${form.name}`,
+          `Phone: ${form.phone || '-'}`,
+          `Email: ${form.email}`,
+          `Subject: ${form.subject}`,
+          hiddenProduct ? `Product: ${hiddenProduct}` : null,
+          '',
+          form.message,
+        ]
+          .filter(Boolean)
+          .join('\n');
+
+        toast.error(
+          'Could not reach our server. Opening WhatsApp with your message — just press send.'
+        );
+        window.open(
+          `https://wa.me/919814391854?text=${encodeURIComponent(body)}`,
+          '_blank',
+          'noopener'
+        );
+        setForm({ ...EMPTY });
+        onDone?.({ offline: true });
+        return;
+      }
       if (err.fields) setErrors(err.fields);
       toast.error(err.message);
     } finally {

@@ -8,7 +8,7 @@ import {
   ErrorState,
   PageHeader,
 } from '../components/Feedback';
-import { api } from '../api';
+import { getProducts, getCategories } from '../catalogue';
 import { useDebounced, useFetch } from '../hooks';
 
 const SORTS = [
@@ -29,11 +29,11 @@ export default function Products() {
 
   const catQuery = category === 'All' ? {} : { category };
   const { data, loading, error, reload } = useFetch(
-    () => api.getProducts({ ...catQuery, q: debouncedQuery }),
+    () => getProducts({ params: { ...catQuery, q: debouncedQuery } }),
     [category, debouncedQuery]
   );
 
-  const catData = useFetch(() => api.getCategories(), []);
+  const catData = useFetch(() => getCategories(), []);
 
   // Keep the URL and the search box in sync.
   useEffect(() => {
