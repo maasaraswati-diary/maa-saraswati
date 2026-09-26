@@ -1,0 +1,49 @@
+# Render blueprint - deploys the MAA SARASWATI API on Render's free tier.
+# Create it at https://render.com/  ->  New  ->  Blueprint  ->  point at this repo.
+#
+# The frontend is NOT here. It is deployed separately to Firebase Hosting,
+# built with VITE_API_BASE pointing at the URL this service produces.
+
+services:
+  - type: web
+    name: maa-saraswati-api
+    runtime: node
+    plan: free
+    region: singapore
+    rootDir: server
+    buildCommand: npm install --omit=dev
+    startCommand: node src/index.js
+    healthCheckPath: /api/health
+    autoDeploy: false
+    envVars:
+      # Firestore instead of local JSON files.
+      - key: STORAGE
+        value: firestore
+
+      # The website is served from Firebase Hosting - list every origin that
+      # may call this API, comma separated. Use *.web.app and *.firebaseapp.com
+      # style values below only if you also set a wildcard, so prefer the exact
+      # domain once you know it:
+      #   https://<your-project>.web.app,https://<your-project>.firebaseapp.com
+      - key: CLIENT_ORIGIN
+        sync: false
+
+      # Signs admin session tokens.
+      - key: JWT_SECRET
+        generateValue: true
+
+      # The single admin account, created on first boot.
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+
+      # Firestore access. Paste the whole service-account JSON here, or
+      # base64-encode it. Firebase console -> Project settings -> Service
+      # accounts -> Generate new private key.
+      - key: FIREBASE_SERVICE_ACCOUNT
+        sync: false
+
+      # Only needed if the key above has no project_id (rare).
+      - key: FIRESTORE_PROJECT_ID
+        sync: false

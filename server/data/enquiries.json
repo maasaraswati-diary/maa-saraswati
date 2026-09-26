@@ -1,0 +1,13 @@
+[
+  {
+    "id": "enq_10139b23ed7c",
+    "name": "Aarav Sharma",
+    "email": "aarav@example.com",
+    "phone": "9812345670",
+    "subject": "General enquiry",
+    "product": "",
+    "message": "Please share your wholesale rate for 20 litres of milk daily.",
+    "status": "new",
+    "createdAt": "2026-09-26T20:12:37.638Z"
+  }
+]

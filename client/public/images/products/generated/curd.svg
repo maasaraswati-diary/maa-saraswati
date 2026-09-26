@@ -1,0 +1,67 @@
+<svg viewBox="0 0 900 1100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Maa Saraswati Fresh Curd">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.7" y2="1">
+      <stop offset="0" stop-color="#FFFDF4"/>
+      <stop offset="1" stop-color="#E6F4E9"/>
+    </linearGradient>
+    <linearGradient id="tub" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#F1F5F2"/>
+      <stop offset="0.35" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#DCE7E0"/>
+    </linearGradient>
+    <linearGradient id="lid" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2E9E52"/>
+      <stop offset="1" stop-color="#15713A"/>
+    </linearGradient>
+    <linearGradient id="curd" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#F4EFE2"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="900" height="1100" fill="url(#bg)"/>
+  <circle cx="120" cy="180" r="150" fill="#15713A" opacity="0.06"/>
+  <circle cx="820" cy="900" r="190" fill="#2E9E52" opacity="0.07"/>
+  <g opacity="0.5" fill="#2E9E52">
+    <path d="M90 700c30-45 75-60 75-60s-20 50-75 60z"/>
+    <path d="M810 300c-34-40-80-50-80-50s28 46 80 50z"/>
+  </g>
+
+  <!-- brand badge -->
+  <g transform="translate(450,120)">
+    <path d="M-175,-70h350a45,45 0 0 1 45,45v50a45,45 0 0 1 -45,45h-350a45,45 0 0 1 -45,-45v-50a45,45 0 0 1 45,-45z" fill="#C8102E"/>
+    <path d="M-160,-58h320a36,36 0 0 1 36,36v42a36,36 0 0 1 -36,36h-320a36,36 0 0 1 -36,-36v-42a36,36 0 0 1 36,-36z" fill="none" stroke="#fff" stroke-width="5" opacity="0.85"/>
+    <text x="0" y="-4" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="50" font-weight="800" fill="#fff" letter-spacing="2">MAA</text>
+    <text x="0" y="46" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="42" font-weight="800" fill="#fff" letter-spacing="1">SARASWATI</text>
+  </g>
+
+  <!-- tub -->
+  <g transform="translate(450,600)">
+    <ellipse cx="0" cy="215" rx="215" ry="42" fill="#15713A" opacity="0.16"/>
+    <path d="M-190-120h380v235a105,105 0 0 1 -380,0z" fill="url(#tub)"/>
+    <path d="M-190-120h380v70h-380z" fill="url(#curd)"/>
+    <ellipse cx="0" cy="-50" rx="190" ry="42" fill="url(#curd)"/>
+    <ellipse cx="0" cy="-52" rx="190" ry="42" fill="none" stroke="#D9E4DC" stroke-width="5"/>
+    <!-- lid -->
+    <path d="M-215-150h430v70a60,60 0 0 1 -60,60h-310a60,60 0 0 1 -60,-60z" fill="url(#lid)"/>
+    <ellipse cx="0" cy="-150" rx="215" ry="46" fill="#37B260"/>
+    <ellipse cx="0" cy="-150" rx="150" ry="31" fill="#2E9E52"/>
+    <ellipse cx="0" cy="-150" rx="72" ry="15" fill="#8AD3A4" opacity="0.5"/>
+    <!-- label -->
+    <rect x="-160" y="10" width="320" height="150" rx="18" fill="#fff" opacity="0.95"/>
+    <rect x="-160" y="10" width="320" height="150" rx="18" fill="none" stroke="#DCE7E0" stroke-width="3"/>
+    <text x="0" y="62" text-anchor="middle" font-family="Georgia, serif" font-size="46" font-style="italic" font-weight="700" fill="#15713A">Fresh</text>
+    <text x="0" y="118" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="52" font-weight="800" fill="#15713A" letter-spacing="1">CURD</text>
+    <text x="0" y="146" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="600" fill="#5A6B60" letter-spacing="3">400 g</text>
+    <rect x="52" y="170" width="26" height="26" rx="5" fill="#15713A"/>
+    <text x="88" y="191" font-family="Segoe UI, Arial, sans-serif" font-size="22" font-weight="700" fill="#15713A">100% VEG</text>
+  </g>
+
+  <!-- milk splash base -->
+  <path d="M250 900c40-28 78 22 118 0s78 22 118 0 78 22 118 0" fill="none" stroke="#fff" stroke-width="18" stroke-linecap="round" opacity="0.9"/>
+  <path d="M255 945c40-28 78 22 118 0s78 22 118 0 78 22 118 0" fill="none" stroke="#DCE7E0" stroke-width="10" stroke-linecap="round"/>
+
+  <rect x="0" y="995" width="900" height="105" fill="#15713A"/>
+  <text x="450" y="1042" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="800" fill="#fff" letter-spacing="4">SET FROM COLD MILK</text>
+  <text x="450" y="1080" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="500" fill="#B9E3C8" letter-spacing="2">THICK · CREAMY · NEVER REHEATED</text>
+</svg>

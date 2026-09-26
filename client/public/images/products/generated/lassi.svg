@@ -1,0 +1,72 @@
+<svg viewBox="0 0 900 1100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Maa Saraswati Sweet Rose Lassi">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.7" y2="1">
+      <stop offset="0" stop-color="#FFF9F6"/>
+      <stop offset="1" stop-color="#FBE4EC"/>
+    </linearGradient>
+    <linearGradient id="drink" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FDEEF3"/>
+      <stop offset="0.45" stop-color="#F7D2DE"/>
+      <stop offset="1" stop-color="#E9A9BE"/>
+    </linearGradient>
+    <linearGradient id="creamtop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#FBEAF0"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="900" height="1100" fill="url(#bg)"/>
+  <circle cx="140" cy="280" r="160" fill="#E9A9BE" opacity="0.18"/>
+  <circle cx="800" cy="890" r="170" fill="#C8102E" opacity="0.05"/>
+
+  <!-- rose petals -->
+  <g opacity="0.55" fill="#D96A8B">
+    <path d="M150 830c22-16 46 4 46 4s-24 26-46-4z"/>
+    <path d="M780 300c-24-14-48 8-48 8s26 24 48-8z"/>
+    <path d="M700 830c20-12 42 6 42 6s-22 22-42-6z"/>
+  </g>
+
+  <!-- brand badge -->
+  <g transform="translate(450,120)">
+    <path d="M-175,-70h350a45,45 0 0 1 45,45v50a45,45 0 0 1 -45,45h-350a45,45 0 0 1 -45,-45v-50a45,45 0 0 1 45,-45z" fill="#C8102E"/>
+    <path d="M-160,-58h320a36,36 0 0 1 36,36v42a36,36 0 0 1 -36,36h-320a36,36 0 0 1 -36,-36v-42a36,36 0 0 1 36,-36z" fill="none" stroke="#fff" stroke-width="5" opacity="0.85"/>
+    <text x="0" y="-4" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="50" font-weight="800" fill="#fff" letter-spacing="2">MAA</text>
+    <text x="0" y="46" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="42" font-weight="800" fill="#fff" letter-spacing="1">SARASWATI</text>
+  </g>
+
+  <!-- glass -->
+  <g transform="translate(450,600)">
+    <ellipse cx="0" cy="250" rx="180" ry="40" fill="#C4738C" opacity="0.18"/>
+    <!-- straw -->
+    <g transform="rotate(12)">
+      <rect x="18" y="-300" width="26" height="330" rx="13" fill="#C8102E"/>
+      <rect x="18" y="-300" width="10" height="330" rx="5" fill="#E23B4F"/>
+      <g fill="#fff" opacity="0.85">
+        <rect x="18" y="-190" width="26" height="26"/>
+        <rect x="18" y="-110" width="26" height="26"/>
+      </g>
+    </g>
+    <!-- body -->
+    <path d="M-150-220h300l-32 420a56,56 0 0 1 -56 50h-124a56,56 0 0 1 -56,-50z" fill="url(#drink)" opacity="0.95"/>
+    <path d="M-150-220h300l-32 420a56,56 0 0 1 -56 50h-124a56,56 0 0 1 -56,-50z" fill="none" stroke="#fff" stroke-width="6" opacity="0.85"/>
+    <!-- cream swirl top -->
+    <path d="M-150-220c34-34 74 6 108-14s70 10 104-8 40 12 38 22h-250z" fill="url(#creamtop)"/>
+    <path d="M-150-220c34-34 74 6 108-14s70 10 104-8 40 12 38 22" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round"/>
+    <!-- highlight -->
+    <path d="M-108-190l26 390" stroke="#fff" stroke-width="20" stroke-linecap="round" opacity="0.35"/>
+    <!-- rose swirl in drink -->
+    <path d="M-90 30c40-30 74 22 114-6" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round" opacity="0.7"/>
+    <path d="M-84 120c40-30 74 22 114-6" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" opacity="0.5"/>
+    <!-- base -->
+    <ellipse cx="0" cy="252" rx="112" ry="22" fill="#E9A9BE" opacity="0.5"/>
+  </g>
+
+  <!-- rose petals on surface -->
+  <g opacity="0.8" fill="#C8102E">
+    <path d="M300 905c24-18 50 4 50 4s-26 28-50-4z"/>
+    <path d="M470 930c22-16 46 4 46 4s-24 24-46-4z"/>
+  </g>
+
+  <rect x="0" y="995" width="900" height="105" fill="#C8102E"/>
+  <text x="450" y="1042" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="800" fill="#fff" letter-spacing="4">THICK &amp; CHILLED</text>
+  <text x="450" y="1080" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="500" fill="#F8C9D3" letter-spacing="2">REAL ROSE · NO ARTIFICIAL COLOUR</text>
+</svg>

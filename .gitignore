@@ -1,0 +1,28 @@
+node_modules/
+dist/
+.env
+server/.env
+server/uploads/*
+!server/uploads/.gitkeep
+*.log
+*.err
+.firebase/
+firebase-debug*
+ui-debug*
+
+# Firebase service-account keys must NEVER be committed
+*firebase-adminsdk*
+*serviceAccount*.json
+*service-account*.json
+gha_*.json
+.env
+.env.*
+!.env.example
+
+.DS_Store
+.vscode/
+.idea/
+
+# Runtime data written by the local JSON store
+server/data/*.tmp
+*.out

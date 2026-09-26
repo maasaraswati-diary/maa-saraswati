@@ -1,0 +1,806 @@
+[
+  {
+    "id": "prod_milk_500",
+    "slug": "pasteurized-standardized-milk",
+    "name": "Pasteurized Standardized Milk",
+    "shortName": "Standardized Milk",
+    "category": "Milk",
+    "tagline": "Shuddhata ka Vaada, Sehat ka Iraada",
+    "taglineEnglish": "A promise of purity, a commitment to health",
+    "price": 56,
+    "mrp": 62,
+    "unit": "pouch",
+    "packSize": "500 ml",
+    "fat": "4.5%",
+    "veg": true,
+    "inStock": true,
+    "featured": true,
+    "rating": 4.7,
+    "reviewCount": 1284,
+    "soldLabel": "12,400+ pouches sold this month",
+    "shortDescription": "Everyday fresh, full-cream flavour milk sourced from healthy cows and pasteurised for your family's safety.",
+    "description": [
+      "Maa Saraswati Pasteurized Standardized Milk is the milk our own families drink every morning. It arrives from grass-fed, healthy cows, is standardised to a consistent 4.5% fat, and is pasteurised to remove harmful bacteria without spoiling the natural taste.",
+      "No preservatives, no synthetic colour, no adulterants — just clean, warm, full-cream milk that tastes the way milk should. Rich in calcium, protein and energy, it is the everyday foundation for tea, coffee, porridge, sweets and a growing child.",
+      "Each 500 ml pouch is sealed at the dairy and reaches your shelf the same day, so the milk in your kitchen is always fresh, never re-boiled and never stretched."
+    ],
+    "images": [
+      "/images/products/milk-retail-shelf.jpeg",
+      "/images/products/milk-poster.jpeg",
+      "/images/products/milk-billboard.jpeg",
+      "/images/products/milk-city-billboard.jpeg"
+    ],
+    "highlights": [
+      "100% pure & natural",
+      "From healthy cows",
+      "Quality you trust",
+      "No preservatives added"
+    ],
+    "features": [
+      {
+        "icon": "drop",
+        "title": "100% Pure Milk",
+        "text": "Collected from healthy, grass-fed cows. Nothing added, nothing taken away."
+      },
+      {
+        "icon": "shield",
+        "title": "Pasteurised for Safety",
+        "text": "Heat-treated to eliminate harmful bacteria while keeping the taste natural."
+      },
+      {
+        "icon": "nutrition",
+        "title": "Rich in Nutrients",
+        "text": "A balanced source of calcium, protein and clean energy for every age."
+      },
+      {
+        "icon": "family",
+        "title": "For the Whole Family",
+        "text": "Tasty and nutritious enough for the youngest and the oldest at home."
+      }
+    ],
+    "nutrition": [
+      {
+        "label": "Fat",
+        "value": "4.5%",
+        "per": "of total"
+      },
+      {
+        "label": "Protein",
+        "value": "3.0 g",
+        "per": "per 100 ml"
+      },
+      {
+        "label": "Calcium",
+        "value": "110 mg",
+        "per": "per 100 ml"
+      },
+      {
+        "label": "Energy",
+        "value": "61 kcal",
+        "per": "per 100 ml"
+      }
+    ],
+    "usage": [
+      "Tea, coffee and masala chai",
+      "Curd, paneer and khoya at home",
+      "Porridge, milkshakes and smoothies",
+      "Sweets, halwa and kitchen desserts"
+    ],
+    "faqs": [
+      {
+        "q": "Is this full-cream milk?",
+        "a": "Yes. The fat content is standardised to 4.5%, which gives it a rich, full-cream taste and a creamy layer you can see on top after boiling."
+      },
+      {
+        "q": "What does 'standardized' mean?",
+        "a": "Standardisation adjusts the fat level of every batch to a fixed 4.5%. That means the taste and richness stay the same carton to carton, unlike unstandardised milk."
+      },
+      {
+        "q": "What does 'pasteurized' mean?",
+        "a": "The milk is briefly heated to a controlled temperature to kill harmful bacteria, then rapidly cooled. It is why our milk keeps longer and is safer for children and older family members."
+      },
+      {
+        "q": "Is it vegetarian?",
+        "a": "Yes. Maa Saraswati milk is 100% vegetarian, with a green dot mark on every pouch."
+      },
+      {
+        "q": "How should I store it?",
+        "a": "Keep the unopened pouch refrigerated below 5°C. Once opened, consume within 24 hours, and boil before drinking."
+      }
+    ],
+    "createdAt": "2024-01-15T09:00:00.000Z"
+  },
+  {
+    "id": "prod_paneer_200",
+    "slug": "high-protein-paneer",
+    "name": "High Protein Paneer",
+    "shortName": "Paneer",
+    "category": "Paneer & Cheese",
+    "tagline": "Har Bite Mein Takat & Taazgi",
+    "taglineEnglish": "Strength and freshness in every bite",
+    "price": 190,
+    "mrp": 210,
+    "unit": "pack",
+    "packSize": "200 g",
+    "fat": null,
+    "veg": true,
+    "inStock": true,
+    "featured": true,
+    "rating": 4.8,
+    "reviewCount": 967,
+    "soldLabel": "8,900+ packs sold this month",
+    "shortDescription": "Soft, fresh, high-protein paneer made from pure milk — soft enough to melt in the mouth, firm enough for a clean cube.",
+    "description": [
+      "Maa Saraswati Paneer is made from pure, fresh milk and nothing else. Slow-set in warm milk, then cut into soft, snow-white cubes that are firm enough to hold their shape and delicate enough to melt straight into a curry.",
+      "Every 200 g pack is a high-protein favourite for the whole family. It is 100% vegetarian, contains no artificial colours, flavours or preservatives, and is packed the same day it is set so the texture stays soft and the taste stays clean.",
+      "Whether it is in a hot sarson da saag, a layered shrikhand, a grilled tikka or everyday sabzi, this is the paneer that makes a simple meal feel festive."
+    ],
+    "images": [
+      "/images/products/paneer-retail-shelf.jpeg",
+      "/images/products/paneer-poster.jpeg",
+      "/images/products/paneer-billboard.jpeg"
+    ],
+    "highlights": [
+      "Made from pure milk",
+      "Rich in milk proteins",
+      "Fresh & natural",
+      "No artificial additives"
+    ],
+    "features": [
+      {
+        "icon": "muscle",
+        "title": "High in Protein",
+        "text": "Rich in milk proteins that support muscle growth, repair and recovery."
+      },
+      {
+        "icon": "shield",
+        "title": "Builds Immunity",
+        "text": "A natural source of protein and calcium to strengthen the immune system."
+      },
+      {
+        "icon": "bone",
+        "title": "Strong Bones",
+        "text": "Naturally rich in calcium, supporting strong bones and teeth."
+      },
+      {
+        "icon": "leaf",
+        "title": "100% Vegetarian",
+        "text": "Pure, hygienic and a healthy choice, with a green dot mark on every pack."
+      }
+    ],
+    "nutrition": [
+      {
+        "label": "Protein",
+        "value": "18 g",
+        "per": "per 100 g"
+      },
+      {
+        "label": "Fat",
+        "value": "21 g",
+        "per": "per 100 g"
+      },
+      {
+        "label": "Calcium",
+        "value": "200 mg",
+        "per": "per 100 g"
+      },
+      {
+        "label": "Energy",
+        "value": "265 kcal",
+        "per": "per 100 g"
+      }
+    ],
+    "usage": [
+      "Paneer bhurji, sabzi and curries",
+      "Shrikhand, kheer and falooda",
+      "Grilled tikka and kebabs",
+      "Sandwiches, wraps and salads"
+    ],
+    "faqs": [
+      {
+        "q": "Is Maa Saraswati Paneer vegetarian?",
+        "a": "Yes. It is 100% vegetarian, sealed with the green dot symbol, and contains no artificial colours, flavours or preservatives."
+      },
+      {
+        "q": "How is the paneer made?",
+        "a": "We set fresh milk with a natural coagulant, then drain and cut it into cubes. No vegetable fat, no starch, no fillers."
+      },
+      {
+        "q": "Why does my paneer not crumble when frying?",
+        "a": "Our paneer has a high protein content, which gives it a firm, springy texture. Dry the cubes lightly on a towel and shallow-fry in medium heat for the best golden edges."
+      },
+      {
+        "q": "How long does it stay good?",
+        "a": "Check the packed-on and use-before date on the pack. Once opened, keep refrigerated and use within 2 days."
+      },
+      {
+        "q": "Can I use it for sweets?",
+        "a": "Absolutely. It is the standard choice for shrikhand, kheer and rasmalai because the high protein keeps the texture smooth after chilling."
+      }
+    ],
+    "createdAt": "2024-01-20T09:00:00.000Z"
+  },
+  {
+    "id": "prod_curd_400",
+    "slug": "thick-set-fresh-curd",
+    "name": "Thick Set Fresh Curd",
+    "shortName": "Fresh Curd",
+    "category": "Curd & Cream",
+    "tagline": "Garmiyon ka asli doodh, garm nahi",
+    "taglineEnglish": "Set with cold milk, never reheated",
+    "price": 90,
+    "mrp": 100,
+    "unit": "tub",
+    "packSize": "400 g",
+    "fat": null,
+    "veg": true,
+    "inStock": true,
+    "featured": true,
+    "rating": 4.6,
+    "reviewCount": 742,
+    "soldLabel": "6,100+ tubs sold this month",
+    "shortDescription": "Thick, creamy curd set from cold pasteurized milk — spoonable, never reheated, and ready in 4 hours.",
+    "description": [
+      "Good curd starts with good milk. We set Maa Saraswati curd from cold pasteurized milk and a live culture, so the milk is never reheated after boiling — which is exactly why it stays thick, creamy and full of flavour.",
+      "The result is curd that holds its shape on the spoon, with a clean tang and no added starch, colour or thickener. Add a pinch of sugar for a simple dessert, or take it straight to the table with pickle and onion."
+    ],
+    "images": [
+      "/images/products/generated/curd.svg"
+    ],
+    "highlights": [
+      "Set from cold milk",
+      "Never reheated",
+      "Thick & creamy",
+      "Live cultures"
+    ],
+    "features": [
+      {
+        "icon": "drop",
+        "title": "Never Reheated",
+        "text": "Set from cold milk after boiling, so the taste stays clean and fresh."
+      },
+      {
+        "icon": "nutrition",
+        "title": "Thick & Creamy",
+        "text": "Holds its shape on the spoon with a naturally light tang."
+      },
+      {
+        "icon": "shield",
+        "title": "Hygienic Process",
+        "text": "Packed in sealed food-grade tubs with no starch or colour added."
+      },
+      {
+        "icon": "family",
+        "title": "Everyday Fresh",
+        "text": "Made in small batches daily and delivered within 24 hours of setting."
+      }
+    ],
+    "nutrition": [
+      {
+        "label": "Fat",
+        "value": "4.2 g",
+        "per": "per 100 g"
+      },
+      {
+        "label": "Protein",
+        "value": "3.6 g",
+        "per": "per 100 g"
+      },
+      {
+        "label": "Calcium",
+        "value": "120 mg",
+        "per": "per 100 g"
+      },
+      {
+        "label": "Energy",
+        "value": "62 kcal",
+        "per": "per 100 g"
+      }
+    ],
+    "usage": [
+      "Raita with meals",
+      "Kanji and kadhi",
+      "Fruit curd",
+      "Smoky curd dips"
+    ],
+    "faqs": [
+      {
+        "q": "Why is my home-made curd runny?",
+        "a": "Most often the milk was set while still warm, or it was reheated later. Our curd is set from cold milk and never reheated, so it stays thick."
+      },
+      {
+        "q": "Is this good for children?",
+        "a": "Yes. A soft, easily digested source of calcium and protein. Serve plain or with fruit for kids."
+      },
+      {
+        "q": "Is any starch or thickener added?",
+        "a": "No. Maa Saraswati curd is made from milk and live cultures only."
+      }
+    ],
+    "createdAt": "2024-02-02T09:00:00.000Z"
+  },
+  {
+    "id": "prod_butter_500",
+    "slug": "cultured-salted-butter",
+    "name": "Cultured Salted Butter",
+    "shortName": "Salted Butter",
+    "category": "Butter & Ghee",
+    "tagline": "Malai ki khushbu, ghar jaisa swaad",
+    "taglineEnglish": "The aroma of malai, the taste of home",
+    "price": 285,
+    "mrp": 320,
+    "unit": "block",
+    "packSize": "500 g",
+    "fat": null,
+    "veg": true,
+    "inStock": true,
+    "featured": true,
+    "rating": 4.7,
+    "reviewCount": 518,
+    "soldLabel": "3,400+ blocks sold this month",
+    "shortDescription": "Slow-churned from cream with live cultures, for a rich malai flavour that melts clean on hot parathas.",
+    "description": [
+      "We churn our butter slowly from fresh cream, using a live culture the way it has always been done in an Indian kitchen. That slow churn is what gives Maa Saraswati Butter its clean, malai-like aroma instead of a waxy, industrial smell.",
+      "Lightly salted for everyday cooking, it melts into a golden layer on a hot paratha, browns bread properly, and makes a simple dal taste like a restaurant dish."
+    ],
+    "images": [
+      "/images/products/generated/butter.svg"
+    ],
+    "highlights": [
+      "Slow churned",
+      "From fresh cream",
+      "Live cultures",
+      "Lightly salted"
+    ],
+    "features": [
+      {
+        "icon": "drop",
+        "title": "Slow Churned",
+        "text": "Churned slowly from fresh cream for a natural malai aroma."
+      },
+      {
+        "icon": "nutrition",
+        "title": "Rich in Vitamin A & D",
+        "text": "A natural source of fat-soluble vitamins for balanced energy."
+      },
+      {
+        "icon": "leaf",
+        "title": "No Artificial Colour",
+        "text": "Naturally yellow from the cream, with nothing added to brighten it."
+      },
+      {
+        "icon": "family",
+        "title": "Made for Indian Cooking",
+        "text": "Ideal for parathas, puris, rotis, dals and baked dishes."
+      }
+    ],
+    "nutrition": [
+      {
+        "label": "Fat",
+        "value": "82 g",
+        "per": "per 100 g"
+      },
+      {
+        "label": "Protein",
+        "value": "0.7 g",
+        "per": "per 100 g"
+      },
+      {
+        "label": "Carbohydrate",
+        "value": "0.1 g",
+        "per": "per 100 g"
+      },
+      {
+        "label": "Energy",
+        "value": "745 kcal",
+        "per": "per 100 g"
+      }
+    ],
+    "usage": [
+      "Parathas, puris and rotis",
+      "Baking and cookies",
+      "Bhuna gosht and tadka",
+      "Bread and sandwiches"
+    ],
+    "faqs": [
+      {
+        "q": "Is this cultured butter?",
+        "a": "Yes. Live cultures are added to the cream before churning, which gives it the traditional fermented flavour."
+      },
+      {
+        "q": "Is it salted or unsalted?",
+        "a": "This is the lightly salted variant, meant for everyday cooking. An unsalted version is available on request."
+      },
+      {
+        "q": "How should I store it?",
+        "a": "Keep refrigerated below 5°C in its original foil. Use within the use-before date and return any unused portion promptly."
+      }
+    ],
+    "createdAt": "2024-02-11T09:00:00.000Z"
+  },
+  {
+    "id": "prod_ghee_500",
+    "slug": "pure-bilona-ghee",
+    "name": "Pure Bilona Desi Ghee",
+    "shortName": "Desi Ghee",
+    "category": "Butter & Ghee",
+    "tagline": "Bilkul shuddh, bilkul desi",
+    "taglineEnglish": "Bilkul shuddh, bilkul desi",
+    "price": 620,
+    "mrp": 680,
+    "unit": "jar",
+    "packSize": "500 ml",
+    "fat": null,
+    "veg": true,
+    "inStock": true,
+    "featured": true,
+    "rating": 4.9,
+    "reviewCount": 1103,
+    "soldLabel": "5,200+ jars sold this month",
+    "shortDescription": "Hand-churned from cultured white butter, in small batches, until the grain turns golden and the aroma is unmistakable.",
+    "description": [
+      "Good ghee announces itself before you taste it. Ours is made by hand-churning fermented curd in small batches, never in a large steel drum, and stopped the moment the grains turn golden and the kitchen smells of warm nuts.",
+      "The result is grainy, golden ghee that melts into a warm roti, makes dal tadka taste festive, and turns a simple halwa into something your family will remember. No blending, no vegetable oil, no shortcuts."
+    ],
+    "images": [
+      "/images/products/generated/ghee.svg"
+    ],
+    "highlights": [
+      "Hand churned",
+      "Cultured white butter",
+      "Small batch",
+      "No vegetable oil"
+    ],
+    "features": [
+      {
+        "icon": "drop",
+        "title": "Traditional Bilona Method",
+        "text": "Hand-churned from cultured curd, the way ghee has always been made at home."
+      },
+      {
+        "icon": "nutrition",
+        "title": "Rich in Fatty Acids",
+        "text": "Naturally contains healthy fats and fat-soluble vitamins."
+      },
+      {
+        "icon": "shield",
+        "title": "No Added Oil",
+        "text": "Single-ingredient ghee with no vegetable oil, butter or preservatives."
+      },
+      {
+        "icon": "leaf",
+        "title": "Grainy & Golden",
+        "text": "Set in jars with the classic grainy texture and deep aroma."
+      }
+    ],
+    "nutrition": [
+      {
+        "label": "Fat",
+        "value": "99.8 g",
+        "per": "per 100 g"
+      },
+      {
+        "label": "Protein",
+        "value": "0.0 g",
+        "per": "per 100 g"
+      },
+      {
+        "label": "Carbohydrate",
+        "value": "0.0 g",
+        "per": "per 100 g"
+      },
+      {
+        "label": "Energy",
+        "value": "900 kcal",
+        "per": "per 100 g"
+      }
+    ],
+    "usage": [
+      "Dal tadka and halwa",
+      "Roti, paratha and rice",
+      "Laddoo and sweets",
+      "Ayurvedic tonics"
+    ],
+    "faqs": [
+      {
+        "q": "What is bilona ghee?",
+        "a": "Bilona means made from bilona curd, not cream. The curd is hand-churned into butter, then that butter is churned again into ghee. It takes longer and costs more, and that is the entire point."
+      },
+      {
+        "q": "How is it different from vanaspati?",
+        "a": "Vanaspati is hydrogenated vegetable oil. Our ghee is pure animal milk fat, with a grainy texture and a real aroma."
+      },
+      {
+        "q": "Why is the jar not completely full?",
+        "a": "Ghee can separate slightly in transit because it is a natural product. A small air gap prevents the jar from cracking and is completely normal."
+      }
+    ],
+    "createdAt": "2024-02-18T09:00:00.000Z",
+    "updatedAt": "2026-09-26T19:46:00.129Z"
+  },
+  {
+    "id": "prod_cheese_200",
+    "slug": "sliced-cheddar-cheese",
+    "name": "Sliced Cheddar Cheese",
+    "shortName": "Cheddar Cheese",
+    "category": "Paneer & Cheese",
+    "tagline": "Kacche burgers ke asli taste ke liye",
+    "taglineEnglish": "Built for real burgers",
+    "price": 240,
+    "mrp": 260,
+    "unit": "pack",
+    "packSize": "200 g (10 slices)",
+    "fat": null,
+    "veg": true,
+    "inStock": true,
+    "featured": false,
+    "rating": 4.5,
+    "reviewCount": 386,
+    "soldLabel": "2,700+ packs sold this month",
+    "shortDescription": "Aged cheddar that melts into a proper cheese pull on a burger and turns a plain dosa into a great one.",
+    "description": [
+      "A real cheddar has to do one thing well: melt. Ours is aged, then milled fine so it melts evenly into a smooth, stretchy layer without splitting or going oily.",
+      "Slice it thin for burgers and sandwiches, grate it over dosas and uttapams, or fold it into a macaroni bake. Vegetarian, with a clean snap and a balanced, slightly sharp cheddar note."
+    ],
+    "images": [
+      "/images/products/generated/cheese.svg"
+    ],
+    "highlights": [
+      "10 clean slices",
+      "Aged cheddar",
+      "Melts evenly",
+      "100% vegetarian"
+    ],
+    "features": [
+      {
+        "icon": "drop",
+        "title": "Melts Evenly",
+        "text": "Milled fine for a smooth, stretchy melt on hot food."
+      },
+      {
+        "icon": "nutrition",
+        "title": "Good Source of Calcium",
+        "text": "Naturally provides calcium and protein for growing bones."
+      },
+      {
+        "icon": "leaf",
+        "title": "100% Vegetarian",
+        "text": "Made with a vegetarian rennet alternative, marked with a green dot."
+      },
+      {
+        "icon": "family",
+        "title": "Family Favourite",
+        "text": "Popular with children for sandwiches, dosas and pasta bakes."
+      }
+    ],
+    "nutrition": [
+      {
+        "label": "Fat",
+        "value": "24 g",
+        "per": "per 100 g"
+      },
+      {
+        "label": "Protein",
+        "value": "25 g",
+        "per": "per 100 g"
+      },
+      {
+        "label": "Calcium",
+        "value": "720 mg",
+        "per": "per 100 g"
+      },
+      {
+        "label": "Energy",
+        "value": "410 kcal",
+        "per": "per 100 g"
+      }
+    ],
+    "usage": [
+      "Burgers and sandwiches",
+      "Dosas and uttapams",
+      "Pasta and macaroni bake",
+      "Grilled cheese toast"
+    ],
+    "faqs": [
+      {
+        "q": "Is this real vegetarian cheddar?",
+        "a": "Yes. It is made using a vegetarian coagulant and carries the green dot mark."
+      },
+      {
+        "q": "Why doesn't my cheese slice melt smoothly?",
+        "a": "Let the slice sit at room temperature for 5 minutes before cooking, and use medium-low heat. High heat makes cheese split and release oil."
+      }
+    ],
+    "createdAt": "2024-03-01T09:00:00.000Z"
+  },
+  {
+    "id": "prod_lassi_200",
+    "slug": "sweet-rose-lassi",
+    "name": "Sweet Rose Lassi",
+    "shortName": "Rose Lassi",
+    "category": "Milk & Beverages",
+    "tagline": "Garmi mein thandak, shaam ko mazza",
+    "taglineEnglish": "Cool in the heat, a treat in the evening",
+    "price": 45,
+    "mrp": 50,
+    "unit": "tetra pack",
+    "packSize": "200 ml",
+    "fat": null,
+    "veg": true,
+    "inStock": true,
+    "featured": false,
+    "rating": 4.4,
+    "reviewCount": 291,
+    "soldLabel": "1,900+ packs sold this month",
+    "shortDescription": "Thick, chilled lassi with a natural rose note — no synthetic flavouring, no artificial colour.",
+    "description": [
+      "A good lassi is thick enough to hold a spoon upright and cold enough to reset your mood. Ours is blended thick with our own milk and cultured curd, then lightly sweetened and scented with real rose.",
+      "Drink it chilled, or pour it over ice with a few rose petals for a summer afternoon. The green dot mark means the whole family can share it."
+    ],
+    "images": [
+      "/images/products/generated/lassi.svg"
+    ],
+    "highlights": [
+      "Thick & chilled",
+      "Real rose",
+      "No artificial colour",
+      "Vegetarian"
+    ],
+    "features": [
+      {
+        "icon": "drop",
+        "title": "Thick Blended",
+        "text": "Made thick with our own milk and curd for a spoon-standing texture."
+      },
+      {
+        "icon": "leaf",
+        "title": "No Artificial Flavour",
+        "text": "Scented with real rose, with no synthetic colour or perfume."
+      },
+      {
+        "icon": "nutrition",
+        "title": "Cooling & Light",
+        "text": "A refreshing, easy drink for hot afternoons and light evenings."
+      },
+      {
+        "icon": "family",
+        "title": "For All Ages",
+        "text": "A pleasant, mildly sweet drink the whole family can enjoy."
+      }
+    ],
+    "nutrition": [
+      {
+        "label": "Fat",
+        "value": "2.8 g",
+        "per": "per 100 ml"
+      },
+      {
+        "label": "Protein",
+        "value": "2.4 g",
+        "per": "per 100 ml"
+      },
+      {
+        "label": "Sugar",
+        "value": "5.2 g",
+        "per": "per 100 ml"
+      },
+      {
+        "label": "Energy",
+        "value": "54 kcal",
+        "per": "per 100 ml"
+      }
+    ],
+    "usage": [
+      "Chilled with ice",
+      "Summer afternoon drinks",
+      "After-meal dessert",
+      "Fruit lassi blends"
+    ],
+    "faqs": [
+      {
+        "q": "Is the rose flavour artificial?",
+        "a": "No. It is scented with natural rose flavouring, with no added colour."
+      },
+      {
+        "q": "Can children drink this?",
+        "a": "Yes, it is vegetarian and lightly sweetened. Shake well before opening and serve chilled."
+      }
+    ],
+    "createdAt": "2024-03-09T09:00:00.000Z"
+  },
+  {
+    "id": "prod_cream_200",
+    "slug": "fresh-cooking-cream",
+    "name": "Fresh Cooking Cream",
+    "shortName": "Fresh Cream",
+    "category": "Curd & Cream",
+    "tagline": "Mushai ke liye, jaisi chahiye",
+    "taglineEnglish": "For gravies, as you need it",
+    "price": 78,
+    "mrp": 85,
+    "unit": "pouch",
+    "packSize": "200 ml",
+    "fat": "25%",
+    "veg": true,
+    "inStock": true,
+    "featured": false,
+    "rating": 4.5,
+    "reviewCount": 224,
+    "soldLabel": "1,600+ pouches sold this month",
+    "shortDescription": "Heavy fresh cream at 25% fat, single-cream consistency that thickens any gravy without splitting.",
+    "description": [
+      "Cream that splits is the most common complaint in an Indian kitchen, and it is almost always because the cream was not fresh or the heat was too high. Ours is 25% fat, made fresh daily from our own milk, with a clean taste and no added thickener.",
+      "Add it at the end of a gravy over low heat and stir for a minute. It will not split, and it will thicken the sauce into something glossy and restaurant-smooth."
+    ],
+    "images": [
+      "/images/products/generated/cream.svg"
+    ],
+    "highlights": [
+      "25% fat",
+      "Made fresh daily",
+      "No thickener",
+      "Vegetarian"
+    ],
+    "features": [
+      {
+        "icon": "drop",
+        "title": "Single-Cream Consistency",
+        "text": "Thickens gravies into a glossy sauce without splitting."
+      },
+      {
+        "icon": "nutrition",
+        "title": "25% Fat",
+        "text": "The right body for pasanda, malai boti and creamy gravies."
+      },
+      {
+        "icon": "shield",
+        "title": "No Added Thickener",
+        "text": "Contains no starch or gum, so the taste stays clean."
+      },
+      {
+        "icon": "leaf",
+        "title": "Vegetarian",
+        "text": "Sealed in food-grade pouches with the green dot mark."
+      }
+    ],
+    "nutrition": [
+      {
+        "label": "Fat",
+        "value": "25 g",
+        "per": "per 100 ml"
+      },
+      {
+        "label": "Protein",
+        "value": "1.8 g",
+        "per": "per 100 ml"
+      },
+      {
+        "label": "Carbohydrate",
+        "value": "3.0 g",
+        "per": "per 100 ml"
+      },
+      {
+        "label": "Energy",
+        "value": "235 kcal",
+        "per": "per 100 ml"
+      }
+    ],
+    "usage": [
+      "Pasanda and korma gravies",
+      "Malai boti and Mughlai dishes",
+      "Pasta and creamy sauces",
+      "Coffee and desserts"
+    ],
+    "faqs": [
+      {
+        "q": "How do I stop cream from splitting?",
+        "a": "Reduce the gravy first, then add the cream over low heat and stir continuously for under two minutes. Boiling cream is what causes splitting."
+      },
+      {
+        "q": "Can I freeze it?",
+        "a": "You can, but the texture separates on thawing. It is best used fresh, within 2 days of opening, kept refrigerated."
+      }
+    ],
+    "createdAt": "2024-03-15T09:00:00.000Z"
+  }
+]

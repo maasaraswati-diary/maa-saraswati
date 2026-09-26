@@ -1,0 +1,10 @@
+[
+  {
+    "id": "usr_admin",
+    "name": "Site Administrator",
+    "email": "maasaraswati449@gmail.com",
+    "role": "admin",
+    "passwordHash": "$2a$10$A4KXTPC.l76ZO7tfKoYJWOgjfesmouD/.KGKaJugr/NXDV2EhdeoW",
+    "createdAt": "2026-09-26T19:23:32.836Z"
+  }
+]

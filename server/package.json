@@ -1,0 +1,33 @@
+{
+  "name": "maa-saraswati-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "REST API for the MAA SARASWATI dairy products website",
+  "type": "module",
+  "main": "src/functions.js",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "seed": "node src/seed.js",
+    "serve": "firebase emulators:start --only functions,firestore",
+    "test:firebase": "firebase emulators:exec --only functions,firestore --project maa-saraswati-diary \"node scripts/smoke-firestore.mjs\"",
+    "deploy": "npm run build --prefix ../client && firebase deploy",
+    "deploy:hosting": "npm run build --prefix ../client && firebase deploy --only hosting",
+    "deploy:api": "firebase deploy --only functions"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
+    "firebase-admin": "^14.5.0",
+    "firebase-functions": "^7.4.0",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2"
+  }
+}

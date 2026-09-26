@@ -1,0 +1,24 @@
+{
+  "name": "maa-saraswati",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MAA SARASWATI - dairy products website (React frontend + Express API)",
+  "scripts": {
+    "install:all": "npm install --prefix server && npm install --prefix client",
+    "dev": "concurrently -n API,WEB -c magenta,cyan \"npm:dev:server\" \"npm:dev:client\"",
+    "dev:server": "npm run dev --prefix server",
+    "dev:client": "npm run dev --prefix client",
+    "build": "npm run build --prefix client",
+    "start": "npm start --prefix server",
+    "emulators": "npm run serve --prefix server",
+    "test:firebase": "npm run test:firebase --prefix server",
+    "deploy": "npm run build && firebase deploy",
+    "deploy:hosting": "npm run build && firebase deploy --only hosting",
+    "deploy:api": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1",
+    "firebase-tools": "^15.31.0"
+  }
+}

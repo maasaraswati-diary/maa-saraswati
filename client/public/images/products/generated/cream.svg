@@ -1,0 +1,71 @@
+<svg viewBox="0 0 900 1100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Maa Saraswati Fresh Cooking Cream">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.7" y2="1">
+      <stop offset="0" stop-color="#FFFEF8"/>
+      <stop offset="1" stop-color="#EDEFEA"/>
+    </linearGradient>
+    <linearGradient id="pouch" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#E8ECE6"/>
+      <stop offset="0.28" stop-color="#FFFFFF"/>
+      <stop offset="0.72" stop-color="#F4F7F3"/>
+      <stop offset="1" stop-color="#DDE3DB"/>
+    </linearGradient>
+    <linearGradient id="seal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2E9E52"/><stop offset="1" stop-color="#15713A"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="900" height="1100" fill="url(#bg)"/>
+  <circle cx="150" cy="270" r="160" fill="#2E9E52" opacity="0.09"/>
+  <circle cx="800" cy="880" r="175" fill="#FFFFFF" opacity="0.7"/>
+  <g opacity="0.5" fill="#2E9E52">
+    <circle cx="800" cy="320" r="8"/><circle cx="120" cy="720" r="7"/><circle cx="170" cy="770" r="5"/>
+  </g>
+
+  <!-- brand badge -->
+  <g transform="translate(450,120)">
+    <path d="M-175,-70h350a45,45 0 0 1 45,45v50a45,45 0 0 1 -45,45h-350a45,45 0 0 1 -45,-45v-50a45,45 0 0 1 45,-45z" fill="#15713A"/>
+    <path d="M-160,-58h320a36,36 0 0 1 36,36v42a36,36 0 0 1 -36,36h-320a36,36 0 0 1 -36,-36v-42a36,36 0 0 1 36,-36z" fill="none" stroke="#fff" stroke-width="5" opacity="0.85"/>
+    <text x="0" y="-4" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="50" font-weight="800" fill="#fff" letter-spacing="2">MAA</text>
+    <text x="0" y="46" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="42" font-weight="800" fill="#fff" letter-spacing="1">SARASWATI</text>
+  </g>
+
+  <!-- pouch -->
+  <g transform="translate(450,610)">
+    <ellipse cx="0" cy="250" rx="205" ry="42" fill="#8A9A8C" opacity="0.2"/>
+    <path d="M-195-235h390v400a76,76 0 0 1 -76,76h-238a76,76 0 0 1 -76,-76z" fill="url(#pouch)" stroke="#D5DCD3" stroke-width="4"/>
+    <!-- top seal + spout -->
+    <path d="M-195-235h390v-32h-390z" fill="url(#seal)"/>
+    <g fill="#2E9E52">
+      <rect x="-195" y="-259" width="14" height="24" rx="5"/>
+      <rect x="-140" y="-259" width="14" height="24" rx="5"/>
+      <rect x="-85" y="-259" width="14" height="24" rx="5"/>
+      <rect x="-30" y="-259" width="14" height="24" rx="5"/>
+      <rect x="25" y="-259" width="14" height="24" rx="5"/>
+      <rect x="80" y="-259" width="14" height="24" rx="5"/>
+      <rect x="135" y="-259" width="14" height="24" rx="5"/>
+    </g>
+    <circle cx="140" cy="-205" r="15" fill="#fff" opacity="0.9"/>
+    <!-- cream swirl -->
+    <g transform="translate(0,10)">
+      <path d="M-120 60c0-42 40-52 40-88 0-24-22-30-22-52 0-30 34-40 34-66 0-16-12-22-12-34 0-16 18-22 18-34 0-10-8-14-8-22h136c0 30-30 36-30 62 0 32 34 42 34 72 0 26-24 34-24 58 0 30 26 40 26 68 0 22-16 30-16 46z" fill="#FFFFFF" opacity="0.9"/>
+      <path d="M-96 20c0-30 32-40 32-66 0-18-16-24-16-40 0-24 26-30 26-50" fill="none" stroke="#F4C7D6" stroke-width="7" stroke-linecap="round" opacity="0.8"/>
+      <path d="M-60 90c0-30 30-38 30-64" fill="none" stroke="#F4C7D6" stroke-width="6" stroke-linecap="round" opacity="0.7"/>
+    </g>
+    <!-- label -->
+    <rect x="-170" y="60" width="340" height="160" rx="18" fill="#fff" opacity="0.96"/>
+    <rect x="-170" y="60" width="340" height="160" rx="18" fill="none" stroke="#DCE7E0" stroke-width="3"/>
+    <text x="0" y="106" text-anchor="middle" font-family="Georgia, serif" font-size="34" font-style="italic" font-weight="700" fill="#15713A">Fresh</text>
+    <text x="0" y="154" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="42" font-weight="800" fill="#15713A" letter-spacing="1">CREAM</text>
+    <text x="0" y="188" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="700" fill="#4E6B58" letter-spacing="3">25% FAT · 200 ml</text>
+    <rect x="66" y="196" width="22" height="20" rx="4" fill="#15713A"/>
+    <text x="98" y="213" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#15713A">100% VEGETARIAN</text>
+  </g>
+
+  <!-- gravy swirl -->
+  <path d="M310 905c38 0 38 24 76 24s38-24 76-24 38 24 76 24" fill="none" stroke="#DCE7E0" stroke-width="15" stroke-linecap="round"/>
+
+  <rect x="0" y="995" width="900" height="105" fill="#15713A"/>
+  <text x="450" y="1042" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="800" fill="#fff" letter-spacing="4">THICKENS ANY GRAVY</text>
+  <text x="450" y="1080" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="500" fill="#B9E3C8" letter-spacing="2">MADE FRESH DAILY · NO THICKENER</text>
+</svg>

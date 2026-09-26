@@ -1,0 +1,68 @@
+<svg viewBox="0 0 900 1100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Maa Saraswati Cultured Salted Butter">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.7" y2="1">
+      <stop offset="0" stop-color="#FFFDF4"/>
+      <stop offset="1" stop-color="#FDF0DC"/>
+    </linearGradient>
+    <linearGradient id="block" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFDF7E"/>
+      <stop offset="0.55" stop-color="#F8C64A"/>
+      <stop offset="1" stop-color="#E0A32A"/>
+    </linearGradient>
+    <linearGradient id="top" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFEFC0"/>
+      <stop offset="1" stop-color="#F2C458"/>
+    </linearGradient>
+    <linearGradient id="foil" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#D9DDE0"/>
+      <stop offset="0.3" stop-color="#F4F6F7"/>
+      <stop offset="0.6" stop-color="#D2D7DB"/>
+      <stop offset="1" stop-color="#E9EDEF"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="900" height="1100" fill="url(#bg)"/>
+  <circle cx="810" cy="220" r="160" fill="#F8C64A" opacity="0.14"/>
+  <circle cx="90" cy="880" r="150" fill="#C8102E" opacity="0.05"/>
+  <g opacity="0.45" fill="#E0A32A">
+    <circle cx="120" cy="330" r="9"/><circle cx="170" cy="380" r="6"/><circle cx="760" cy="330" r="7"/>
+  </g>
+
+  <!-- brand badge -->
+  <g transform="translate(450,120)">
+    <path d="M-175,-70h350a45,45 0 0 1 45,45v50a45,45 0 0 1 -45,45h-350a45,45 0 0 1 -45,-45v-50a45,45 0 0 1 45,-45z" fill="#F26522"/>
+    <path d="M-160,-58h320a36,36 0 0 1 36,36v42a36,36 0 0 1 -36,36h-320a36,36 0 0 1 -36,-36v-42a36,36 0 0 1 36,-36z" fill="none" stroke="#fff" stroke-width="5" opacity="0.85"/>
+    <text x="0" y="-4" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="50" font-weight="800" fill="#fff" letter-spacing="2">MAA</text>
+    <text x="0" y="46" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="42" font-weight="800" fill="#fff" letter-spacing="1">SARASWATI</text>
+  </g>
+
+  <!-- butter block -->
+  <g transform="translate(450,610)">
+    <ellipse cx="0" cy="235" rx="250" ry="45" fill="#B0781B" opacity="0.18"/>
+    <!-- foil wrapper ends -->
+    <path d="M-300-190l70 26v300l-70-26z" fill="url(#foil)"/>
+    <path d="M300-190l-70 26v300l70-26z" fill="url(#foil)"/>
+    <!-- body -->
+    <path d="M-230-190h460a24,24 0 0 1 24,24v330a24,24 0 0 1 -24,24h-460a24,24 0 0 1 -24,-24v-330a24,24 0 0 1 24,-24z" fill="url(#block)"/>
+    <path d="M-230-190h460a24,24 0 0 1 24,24v96h-508v-96a24,24 0 0 1 24,-24z" fill="url(#top)"/>
+    <g stroke="#D99B24" stroke-width="3" opacity="0.55">
+      <path d="M-96-164v352"/><path d="M0-164v352"/><path d="M96-164v352"/>
+    </g>
+    <!-- label -->
+    <rect x="-190" y="-40" width="380" height="180" rx="20" fill="#fff" opacity="0.94"/>
+    <rect x="-190" y="-40" width="380" height="180" rx="20" fill="none" stroke="#EFD79A" stroke-width="3"/>
+    <text x="0" y="30" text-anchor="middle" font-family="Georgia, serif" font-size="40" font-style="italic" font-weight="700" fill="#B3341F">Cultured</text>
+    <text x="0" y="86" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="48" font-weight="800" fill="#B3341F" letter-spacing="1">BUTTER</text>
+    <text x="0" y="120" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="19" font-weight="600" fill="#8A6A2B" letter-spacing="3">LIGHTLY SALTED · 500 g</text>
+  </g>
+
+  <!-- knife spread -->
+  <g transform="translate(450,880)" opacity="0.95">
+    <path d="M-190,20c50-40 96 14 146-12s96 14 146-12 60 6 88-6v58h-380z" fill="#F8C64A"/>
+    <path d="M-190,20c50-40 96 14 146-12s96 14 146-12 60 6 88-6" fill="none" stroke="#FFF0C0" stroke-width="9" stroke-linecap="round"/>
+  </g>
+
+  <rect x="0" y="995" width="900" height="105" fill="#B3341F"/>
+  <text x="450" y="1042" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="800" fill="#fff" letter-spacing="4">SLOW CHURNED FROM CREAM</text>
+  <text x="450" y="1080" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="500" fill="#F6C9A8" letter-spacing="2">LIVE CULTURES · NO ARTIFICIAL COLOUR</text>
+</svg>
