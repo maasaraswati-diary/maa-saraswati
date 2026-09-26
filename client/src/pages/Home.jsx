@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Icon from '../components/Icons';
+import Picture from '../components/Picture';
 import ProductCard from '../components/ProductCard';
 import { CardSkeleton, ErrorState } from '../components/Feedback';
 import { formatPrice } from '../api';
@@ -319,7 +320,7 @@ export default function Home() {
                   onClick={() => setActiveSlide(i)}
                   aria-label={`View image ${i + 1}`}
                 >
-                  <img src={src} alt="" />
+                  <Picture src={src} alt="" />
                 </button>
               ))}
             </div>
@@ -509,10 +510,11 @@ export default function Home() {
         <div className="container showcase">
           <div className="showcase-media reveal">
             <div className="showcase-frame">
-              <img
+              <Picture
                 src="/images/products/paneer-billboard.jpeg"
                 alt="Maa Saraswati paneer campaign billboard"
                 loading="lazy"
+                sizes="(max-width: 900px) 94vw, 46vw"
               />
             </div>
             <div className="showcase-tag glass">

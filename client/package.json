@@ -6,6 +6,8 @@
   "description": "React frontend for the MAA SARASWATI dairy products website",
   "scripts": {
     "prebuild": "node scripts/sync-catalogue.mjs",
+    "images": "node scripts/optimise-images.mjs",
+    "images:compare": "node scripts/optimise-images.mjs --compare",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
@@ -18,6 +20,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",
+    "sharp": "^0.35.4",
     "vite": "^5.4.2"
   },
   "allowScripts": {

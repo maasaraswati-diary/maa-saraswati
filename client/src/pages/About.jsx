@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import Icon from '../components/Icons';
+import Picture from '../components/Picture';
 import { PageHeader } from '../components/Feedback';
 
 const TIMELINE = [
@@ -90,10 +91,11 @@ export default function About() {
         <div className="container story">
           <div className="story-media reveal">
             <div className="story-frame">
-              <img
+              <Picture
                 src="/images/products/milk-city-billboard.jpeg"
                 alt="Maa Saraswati campaign in the city"
                 loading="lazy"
+                sizes="(max-width: 900px) 94vw, 52vw"
               />
             </div>
             <div className="story-badge glass">
@@ -223,10 +225,11 @@ export default function About() {
         <div className="container">
           <div className="facility reveal">
             <div className="facility-media">
-              <img
+              <Picture
                 src="/images/products/milk-billboard.jpeg"
                 alt="Maa Saraswati brand billboard"
                 loading="lazy"
+                sizes="(max-width: 900px) 94vw, 46vw"
               />
             </div>
             <div className="facility-copy">
