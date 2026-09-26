@@ -225,6 +225,15 @@ export async function updateProduct(id, product, isOwner = false) {
   // until the owner has looked at the change.
   if (!isOwner) {
     await deleteDoc(doc(db, LIVE, id)).catch(() => {});
+    return;
+  }
+
+  // The owner editing their own live product: the storefront reads the `shop`
+  // copy, so that copy has to move too. Without this a new picture, price or
+  // name would save in the panel and never reach the website.
+  const live = await getDoc(doc(db, LIVE, id));
+  if (live.exists()) {
+    await setDoc(doc(db, LIVE, id), patch, { merge: true });
   }
 }
 

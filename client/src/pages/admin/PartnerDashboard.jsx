@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import Icon from '../../components/Icons';
 import TestimonialsPanel from './PartnerTestimonials';
 import { useToast } from '../../components/Toast';
@@ -39,6 +39,7 @@ function StatusBadge({ status }) {
 export default function PartnerDashboard() {
   const { user, isOwner, signOut } = useAuth();
   const navigate = useNavigate();
+  const { pathname, search } = useLocation();
   const toast = useToast();
 
   // The open tab lives in the URL, so Reviews (and anything else) can be linked
@@ -54,7 +55,10 @@ export default function PartnerDashboard() {
 
   const mine = useFetch(
     () => (isOwner ? fetchAllProducts() : fetchProductsByOwner(user.email)),
-    [user?.email, isOwner]
+    // Coming back from the add/edit form must re-read, otherwise the table
+    // still shows the values from before the save.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [user?.email, isOwner, pathname, search]
   );
   const enqs = useFetch(() => (isOwner ? fetchEnquiries() : Promise.resolve([])), [isOwner]);
 
