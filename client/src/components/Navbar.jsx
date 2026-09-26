@@ -7,6 +7,7 @@ import Logo from './Logo';
 const LINKS = [
   { to: '/', label: 'Home', end: true },
   { to: '/products', label: 'Products' },
+  { to: '/#testimonials', label: 'Reviews' },
   { to: '/about', label: 'About Us' },
   { to: '/contact', label: 'Contact' },
 ];

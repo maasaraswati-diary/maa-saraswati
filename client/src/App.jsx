@@ -53,8 +53,32 @@ export default function App() {
   useReveal();
 
   useEffect(() => {
-    if (!isPartnerArea) window.scrollTo(0, 0);
-  }, [location.pathname, isPartnerArea]);
+    if (isPartnerArea) return;
+
+    // A hash link such as /#testimonials has to wait for its section, which may
+    // still be fetching. Try a few times as the page settles, otherwise the
+    // scroll lands on the wrong offset or nowhere at all.
+    const hash = location.hash.replace('#', '');
+    if (!hash) {
+      window.scrollTo(0, 0);
+      return undefined;
+    }
+
+    let tries = 0;
+    let timer = null;
+    const jump = () => {
+      const target = document.getElementById(hash);
+      if (target) {
+        const top = target.getBoundingClientRect().top + window.scrollY - 84;
+        window.scrollTo({ top, behavior: 'smooth' });
+        return;
+      }
+      if (tries++ < 20) timer = setTimeout(jump, 120);
+    };
+    jump();
+
+    return () => clearTimeout(timer);
+  }, [location.pathname, location.hash, isPartnerArea]);
 
   return (
     <>

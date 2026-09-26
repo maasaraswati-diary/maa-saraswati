@@ -28,6 +28,7 @@ const COLUMNS = [
     links: [
       { to: '/contact', label: 'Bulk Order Enquiry' },
       { to: '/contact#faq', label: 'Common Questions' },
+      { to: '/#testimonials', label: 'Customer Reviews' },
       { to: '/products', label: 'Product Catalogue' },
       { to: '/partner', label: 'Partner Login' },
     ],
