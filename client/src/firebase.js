@@ -14,11 +14,7 @@ import {
   setPersistence,
   browserLocalPersistence,
 } from 'firebase/auth';
-import {
-  initializeFirestore,
-  persistentLocalCache,
-  persistentMultipleTabManager,
-} from 'firebase/firestore';
+import { getFirestore } from 'firebase/firestore';
 
 // Firebase console -> Project settings -> General -> Your apps -> Web
 const firebaseConfig = {
@@ -36,14 +32,11 @@ export const isFirebaseConfigured = !Object.values(firebaseConfig).some(
 
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
-// Cache reads so repeat visits are instant, even on a slow connection.
-export const db = isFirebaseConfigured
-  ? initializeFirestore(app, {
-      localCache: persistentLocalCache({
-        tabManager: persistentMultipleTabManager(),
-      }),
-    })
-  : null;
+// Firestore is read straight from the server on every visit, using the SDK's
+// default in-memory cache. An on-disk cache is deliberately avoided: a product
+// the owner has just approved must show up for customers immediately, and a
+// stale cached catalogue is worse than a marginally slower one.
+export const db = isFirebaseConfigured ? getFirestore(app) : null;
 
 export const auth = isFirebaseConfigured ? getAuth(app) : null;
 
