@@ -56,6 +56,14 @@ service cloud.firestore {
       allow delete: if owner() || mine();
     }
 
+    // ---------- testimonials ----------
+    // Public: anyone can read the customer reviews. Only the owner can change
+    // them, so a partner can never put words in a customer's mouth.
+    match /testimonials/{id} {
+      allow read: if true;
+      allow write: if owner();
+    }
+
     // ---------- enquiries ----------
     match /enquiries/{id} {
       allow read, update, delete: if owner();

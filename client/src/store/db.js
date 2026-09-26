@@ -282,6 +282,71 @@ export async function removeEnquiry(id) {
   await deleteDoc(doc(db, 'enquiries', id));
 }
 
+/* ------------------------------------------------------------ testimonials */
+
+// Written only by the shop owner, read by everyone - see `testimonials` in
+// firestore.rules.
+
+/** Public: what customers say about us, in the order the owner arranged. */
+export async function fetchTestimonials() {
+  const snap = await getDocs(collection(db, 'testimonials'));
+  return snap.docs
+    .map((d) => ({ id: d.id, ...d.data() }))
+    .sort(
+      (a, b) =>
+        (Number(a.sortOrder) || 0) - (Number(b.sortOrder) || 0) ||
+        String(a.createdAt || '').localeCompare(String(b.createdAt || ''))
+    );
+}
+
+function toTestimonialDoc(t) {
+  return {
+    name: clean(t.name),
+    role: clean(t.role),
+    text: clean(t.text),
+    rating: Math.min(5, Math.max(1, Number(t.rating) || 5)),
+    sortOrder: Number(t.sortOrder) || 0,
+  };
+}
+
+export async function createTestimonial(t) {
+  const id = `t_${newId()}`;
+  await setDoc(doc(db, 'testimonials', id), {
+    ...toTestimonialDoc(t),
+    createdAt: nowIso(),
+  });
+  return id;
+}
+
+export async function updateTestimonial(id, t) {
+  await setDoc(doc(db, 'testimonials', id), toTestimonialDoc(t), { merge: true });
+}
+
+export async function removeTestimonial(id) {
+  await deleteDoc(doc(db, 'testimonials', id));
+}
+
+/**
+ * One-time migration of the testimonials that were hard-coded in the page, so
+ * the owner can start editing them from the panel. Only runs while the
+ * collection is empty.
+ */
+export async function seedTestimonialsIfEmpty(list) {
+  const snap = await getDocs(collection(db, 'testimonials'));
+  if (!snap.empty) return { written: 0, skipped: true };
+
+  const batch = writeBatch(db);
+  list.forEach((t, i) => {
+    batch.set(doc(db, 'testimonials', `seed_${i + 1}`), {
+      ...toTestimonialDoc(t),
+      sortOrder: i,
+      createdAt: nowIso(),
+    });
+  });
+  await batch.commit();
+  return { written: list.length, skipped: false };
+}
+
 /**
  * One-time migration of the seed catalogue into Firestore, tagged to the shop
  * owner so it shows in their partner list. Only runs when the products

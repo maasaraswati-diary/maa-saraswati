@@ -8,12 +8,38 @@
 import {
   fetchApprovedProducts,
   fetchProductBySlug,
+  fetchTestimonials,
 } from './store/db';
 import { isFirebaseConfigured } from './firebase';
 import snapshot from './generated/catalogue.json';
 
 let offline = false;
 export const isCatalogueOffline = () => offline;
+
+/** Stand-in copy, used only until the owner has published real testimonials. */
+const DEFAULT_TESTIMONIALS = [
+  {
+    id: 'd1',
+    name: 'Rahul',
+    role: 'Runs a Sweet House, Gurdaspur',
+    text: 'We use their paneer for our barfi and peda. The protein is high, the texture holds, and the delivery has never been late once.',
+    rating: 5,
+  },
+  {
+    id: 'd2',
+    name: 'Davinder Singh',
+    role: 'Customer since 2011',
+    text: 'I have bought their milk every week for fourteen years. It is the only milk my father will drink, and the only one my children finish.',
+    rating: 5,
+  },
+  {
+    id: 'd3',
+    name: 'Harbhajan Singh',
+    role: 'Household customer, Kahnuwaan Chowk',
+    text: 'The ghee is clean and the price is fair. I order monthly for the whole family and it always reaches before 7 in the morning.',
+    rating: 5,
+  },
+];
 
 function matches(product, params) {
   const { category, featured, q, inStock } = params;
@@ -120,6 +146,23 @@ export async function getProduct(idOrSlug) {
     )
     .slice(0, 4);
   return { product, related };
+}
+
+/**
+ * Customer testimonials. These come from Firestore so the shop owner can add or
+ * remove them from the partner panel. The list below is only a stand-in for
+ * the window between a fresh install and the first publish.
+ */
+export async function getTestimonials() {
+  if (isFirebaseConfigured) {
+    try {
+      const list = await fetchTestimonials();
+      if (list.length) return list;
+    } catch {
+      offline = true;
+    }
+  }
+  return DEFAULT_TESTIMONIALS;
 }
 
 export async function ping() {

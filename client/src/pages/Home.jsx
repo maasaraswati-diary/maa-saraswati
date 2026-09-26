@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Icon from '../components/Icons';
 import ProductCard from '../components/ProductCard';
 import { CardSkeleton, ErrorState } from '../components/Feedback';
 import { formatPrice } from '../api';
-import { getProducts } from '../catalogue';
+import { getProducts, getTestimonials } from '../catalogue';
 import { useFetch } from '../hooks';
 
 const STATS = [
@@ -64,26 +64,8 @@ const PROCESS = [
   },
 ];
 
-const TESTIMONIALS = [
-  {
-    name: 'Rahul',
-    role: 'Runs a Sweet House, Gurdaspur',
-    text: 'We use their paneer for our barfi and peda. The protein is high, the texture holds, and the delivery has never been late once.',
-    rating: 5,
-  },
-  {
-    name: 'Davinder Singh',
-    role: 'Customer since 2011',
-    text: 'I have bought their milk every week for fourteen years. It is the only milk my father will drink, and the only one my children finish.',
-    rating: 5,
-  },
-  {
-    name: 'Harbhajan Singh',
-    role: 'Household customer, Kahnuwaan Chowk',
-    text: 'The ghee is clean and the price is fair. I order monthly for the whole family and it always reaches before 7 in the morning.',
-    rating: 5,
-  },
-];
+/** Shown only if the owner has not published any testimonials yet. */
+const TESTIMONIAL_FALLBACK = [];
 
 const FAQS = [
   {
@@ -126,10 +108,68 @@ function StarRow({ n = 5, size = 15 }) {
   );
 }
 
+/** Above this many reviews a slider is nicer than a long grid. */
+const SLIDER_AT = 3;
+
+function QuoteCard({ t }) {
+  const initials = String(t.name || '?')
+    .split(' ')
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join('');
+  return (
+    <figure className="quote-card">
+      <Icon.Star size={22} className="quote-mark" />
+      <StarRow n={t.rating || 5} />
+      <blockquote>{t.text}</blockquote>
+      <figcaption>
+        <span className="quote-avatar">{initials}</span>
+        <span>
+          <strong>{t.name}</strong>
+          <span className="muted">{t.role}</span>
+        </span>
+      </figcaption>
+    </figure>
+  );
+}
+
 export default function Home() {
   const { data, loading, error, reload } = useFetch(() => getProducts(), []);
   const [openFaq, setOpenFaq] = useState(0);
   const [activeSlide, setActiveSlide] = useState(0);
+
+  // Testimonials come from Firestore so the owner can manage them from the
+  // partner panel.
+  const {
+    data: tstData,
+    loading: tstLoading,
+  } = useFetch(() => getTestimonials(), []);
+  const testimonials = tstData?.length ? tstData : TESTIMONIAL_FALLBACK;
+
+  /* One slide per testimonial. The track is a CSS scroll-snap strip, so the
+     dots and arrows just scroll it - no carousel library needed. */
+  const trackRef = useRef(null);
+  const [page, setPage] = useState(0);
+
+  const goTo = (next) => {
+    const el = trackRef.current;
+    if (!el) return;
+    const i = Math.max(0, Math.min(testimonials.length - 1, next));
+    el.scrollTo({ left: el.clientWidth * i, behavior: 'smooth' });
+    setPage(i);
+  };
+
+  // Keep the dots in step when the visitor swipes or drags the strip.
+  const onTrackScroll = () => {
+    const el = trackRef.current;
+    if (!el) return;
+    const i = Math.round(el.scrollLeft / Math.max(1, el.clientWidth));
+    setPage((p) => (p === i ? p : i));
+  };
+
+  useEffect(() => {
+    if (page > Math.max(0, testimonials.length - 1)) setPage(0);
+  }, [testimonials.length, page]);
 
   const featured = useMemo(
     () => (data?.products || []).filter((p) => p.featured).slice(0, 6),
@@ -453,7 +493,7 @@ export default function Home() {
       </section>
 
       {/* ==================================================== TESTIMONIALS */}
-      <section className="section tint-cream">
+      <section className="section tint-cream" id="testimonials">
         <div className="container">
           <div className="sec-head">
             <span className="eyebrow reveal">Customer Stories</span>
@@ -462,31 +502,77 @@ export default function Home() {
             </h2>
           </div>
 
-          <div className="grid grid-3">
-            {TESTIMONIALS.map((t, i) => (
-              <figure
-                key={t.name}
-                className={`quote-card reveal reveal-d${i + 1}`}
-              >
-                <Icon.Star size={22} className="quote-mark" />
-                <StarRow n={t.rating} />
-                <blockquote>{t.text}</blockquote>
-                <figcaption>
-                  <span className="quote-avatar">
-                    {t.name
-                      .split(' ')
-                      .map((w) => w[0])
-                      .slice(0, 2)
-                      .join('')}
-                  </span>
-                  <span>
-                    <strong>{t.name}</strong>
-                    <span className="muted">{t.role}</span>
-                  </span>
-                </figcaption>
-              </figure>
-            ))}
-          </div>
+          {tstLoading ? (
+            <div className="grid grid-3">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="skel-card" style={{ height: 220 }} />
+              ))}
+            </div>
+          ) : testimonials.length === 0 ? (
+            <p className="muted reveal">
+              Customer stories will appear here soon.
+            </p>
+          ) : testimonials.length > SLIDER_AT ? (
+            /* More than three: a slider, so nobody has to scroll a long list. */
+            <div className="tst-slider reveal reveal-d1">
+              <div className="tst-viewport">
+                <div
+                  className="tst-track"
+                  ref={trackRef}
+                  onScroll={onTrackScroll}
+                >
+                  {testimonials.map((t, i) => (
+                    <div className="tst-slide" key={t.id || t.name + i}>
+                      <QuoteCard t={t} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="tst-controls">
+                <button
+                  type="button"
+                  className="icon-btn"
+                  onClick={() => goTo(page - 1)}
+                  disabled={page === 0}
+                  aria-label="Previous reviews"
+                >
+                  <Icon.ArrowLeft size={18} />
+                </button>
+
+                <div className="tst-dots">
+                  {testimonials.map((t, i) => (
+                    <button
+                      key={t.id || i}
+                      type="button"
+                      className={`tst-dot ${i === page ? 'on' : ''}`}
+                      onClick={() => goTo(i)}
+                      aria-label={`Go to review ${i + 1}`}
+                    />
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  className="icon-btn"
+                  onClick={() => goTo(page + 1)}
+                  disabled={page >= testimonials.length - 1}
+                  aria-label="Next reviews"
+                >
+                  <Icon.ArrowRight size={18} />
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* Three or fewer: a plain grid reads better than a slider. */
+            <div className="grid grid-3">
+              {testimonials.map((t, i) => (
+                <div key={t.id || t.name + i} className={`reveal reveal-d${i + 1}`}>
+                  <QuoteCard t={t} />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

@@ -20,6 +20,7 @@ import { formatPrice } from '../../api';
 const TABS = [
   { key: 'products', label: 'My Products', icon: 'Grid' },
   { key: 'approvals', label: 'Approvals', icon: 'Check', ownerOnly: true },
+  { key: 'testimonials', label: 'Reviews', icon: 'Sparkle', ownerOnly: true },
   { key: 'enquiries', label: 'Enquiries', icon: 'Inbox', ownerOnly: true },
 ];
 
@@ -335,6 +336,22 @@ export default function PartnerDashboard() {
                 </table>
               </div>
             )}
+          </div>
+        )}
+
+        {tab === 'testimonials' && isOwner && (
+          <div className="admin-pane">
+            <div className="admin-toolbar">
+              <p className="muted" style={{ margin: 0 }}>
+                Customer reviews jo home page par dikhti hain.
+              </p>
+              <Link
+                to="/partner/testimonials"
+                className="btn btn-brand btn-sm"
+              >
+                <Icon.Sparkle size={16} /> Manage Reviews
+              </Link>
+            </div>
           </div>
         )}
 

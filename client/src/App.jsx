@@ -21,6 +21,7 @@ import NotFound from './pages/NotFound';
 const PartnerLogin = lazy(() => import('./pages/admin/PartnerLogin'));
 const PartnerDashboard = lazy(() => import('./pages/admin/PartnerDashboard'));
 const PartnerProductForm = lazy(() => import('./pages/admin/PartnerProductForm'));
+const PartnerTestimonials = lazy(() => import('./pages/admin/PartnerTestimonials'));
 
 function FullPageLoader() {
   return (
@@ -92,6 +93,15 @@ export default function App() {
             element={
               <RequirePartner>
                 <PartnerProductForm />
+              </RequirePartner>
+            }
+          />
+
+          <Route
+            path="/partner/testimonials"
+            element={
+              <RequirePartner>
+                <PartnerTestimonials />
               </RequirePartner>
             }
           />

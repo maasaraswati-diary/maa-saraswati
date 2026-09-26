@@ -236,5 +236,23 @@ check('owner can delete a submission', await drop('/products/p_spoof', asOwner))
 check('nobody can write a user profile that is not theirs', !(await write('/users/someone-else', { a: 1 }, asPartner)));
 check('a partner can write their own profile', await write(`/users/${encodeURIComponent('uid-' + PARTNER)}`, { shop: 'Ram Dairy' }, asPartner));
 
+/* ---------------------------------------------------------- testimonials */
+const review = {
+  name: 'Rahul',
+  role: 'Runs a Sweet House',
+  text: 'The paneer holds its texture and delivery is never late.',
+  rating: 5,
+  sortOrder: 0,
+};
+
+check('anyone can read customer reviews', await read('/testimonials', ANON));
+check('a partner can read customer reviews', await read('/testimonials', asPartner));
+check('a partner cannot add a review', !(await write('/testimonials/t_bad', review, asPartner)));
+check('a partner cannot edit a review', !(await write('/testimonials/t_bad', review, asPartner)));
+check('a partner cannot delete a review', !(await drop('/testimonials/t_bad', asPartner)));
+check('the owner can add a review', await write('/testimonials/t_1', review, asOwner));
+check('the owner can edit a review', await write('/testimonials/t_1', { ...review, rating: 4 }, asOwner));
+check('the owner can delete a review', await drop('/testimonials/t_1', asOwner));
+
 console.log(`\n${failures === 0 ? 'ALL CHECKS PASSED' : failures + ' CHECK(S) FAILED'}\n`);
 process.exit(failures === 0 ? 0 : 1);
