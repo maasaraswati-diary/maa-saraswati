@@ -65,7 +65,7 @@ const TEAM = [
     text: 'Runs the lab and the batch records. Has rejected more milk than she has accepted.',
   },
   {
-    name: 'Imran Sheikh',
+    name: 'Mahir',
     role: 'Cold Chain & Delivery',
     text: 'Keeps 40 routes and 14 vehicles on schedule so the milk arrives properly chilled.',
   },

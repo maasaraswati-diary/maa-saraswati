@@ -72,7 +72,7 @@ const TESTIMONIALS = [
     rating: 5,
   },
   {
-    name: 'Imran Sheikh',
+    name: 'Mahir',
     role: 'Runs a Sweet House',
     text: 'We use their paneer for our barfi and peda. The protein is high, the texture holds, and the delivery has never been late once.',
     rating: 5,
