@@ -6,16 +6,16 @@ import Logo from './Logo';
 
 const LINKS = [
   { to: '/', label: 'Home', end: true },
+  { to: '/about', label: 'About Us' },
   { to: '/products', label: 'Products' },
   { to: '/#testimonials', label: 'Reviews' },
-  { to: '/about', label: 'About Us' },
   { to: '/contact', label: 'Contact' },
 ];
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
-  const { pathname } = useLocation();
+  const { pathname, hash } = useLocation();
   useScrollLock(open);
 
   useEffect(() => {
@@ -63,18 +63,32 @@ export default function Navbar() {
           </Link>
 
           <nav className="nav-links" aria-label="Main navigation">
-            {LINKS.map((l) => (
-              <NavLink
-                key={l.to}
-                to={l.to}
-                end={l.end}
-                className={({ isActive }) =>
-                  `nav-link ${isActive ? 'active' : ''}`
-                }
-              >
-                {l.label}
-              </NavLink>
-            ))}
+            {LINKS.map((l) => {
+              // A hash link shares its path with another entry, so it needs the
+              // hash checked too - otherwise Reviews and Home would light up
+              // together.
+              const linkHash = l.to.includes('#') ? l.to.split('#')[1] : '';
+              // A hash link shares its path with another entry, so it needs the
+              // hash checked too - otherwise Reviews and Home would light up
+              // together. While a section is open, plain links step aside.
+              const isActive = linkHash
+                ? pathname === '/' && hash.replace('#', '') === linkHash
+                : hash
+                  ? false
+                  : undefined;
+              return (
+                <NavLink
+                  key={l.to}
+                  to={l.to}
+                  end={l.end}
+                  className={({ isActive: byPath }) =>
+                    `nav-link ${(isActive ?? byPath) ? 'active' : ''}`
+                  }
+                >
+                  {l.label}
+                </NavLink>
+              );
+            })}
           </nav>
 
           <div className="nav-actions">
@@ -120,20 +134,28 @@ export default function Navbar() {
           </div>
 
           <nav className="drawer-links">
-            {LINKS.map((l, i) => (
-              <NavLink
-                key={l.to}
-                to={l.to}
-                end={l.end}
-                style={{ '--i': i }}
-                className={({ isActive }) =>
-                  `drawer-link ${isActive ? 'active' : ''}`
-                }
-              >
-                {l.label}
-                <Icon.ChevronRight size={18} />
-              </NavLink>
-            ))}
+            {LINKS.map((l, i) => {
+              const linkHash = l.to.includes('#') ? l.to.split('#')[1] : '';
+              const isActive = linkHash
+                ? pathname === '/' && hash.replace('#', '') === linkHash
+                : hash
+                  ? false
+                  : undefined;
+              return (
+                <NavLink
+                  key={l.to}
+                  to={l.to}
+                  end={l.end}
+                  style={{ '--i': i }}
+                  className={({ isActive: byPath }) =>
+                    `drawer-link ${(isActive ?? byPath) ? 'active' : ''}`
+                  }
+                >
+                  {l.label}
+                  <Icon.ChevronRight size={18} />
+                </NavLink>
+              );
+            })}
             <NavLink
               to="/partner"
               style={{ '--i': LINKS.length }}
