@@ -21,7 +21,6 @@ import NotFound from './pages/NotFound';
 const PartnerLogin = lazy(() => import('./pages/admin/PartnerLogin'));
 const PartnerDashboard = lazy(() => import('./pages/admin/PartnerDashboard'));
 const PartnerProductForm = lazy(() => import('./pages/admin/PartnerProductForm'));
-const PartnerTestimonials = lazy(() => import('./pages/admin/PartnerTestimonials'));
 
 function FullPageLoader() {
   return (
@@ -121,11 +120,13 @@ export default function App() {
             }
           />
 
+          {/* Reviews are managed inside the dashboard's Reviews tab. The old
+              separate page still works by redirecting there. */}
           <Route
             path="/partner/testimonials"
             element={
               <RequirePartner>
-                <PartnerTestimonials />
+                <Navigate to="/partner/products?tab=testimonials" replace />
               </RequirePartner>
             }
           />

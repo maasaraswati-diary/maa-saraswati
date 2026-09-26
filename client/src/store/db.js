@@ -299,6 +299,7 @@ export async function fetchTestimonials() {
     );
 }
 
+/** Every field, for a brand new review. */
 function toTestimonialDoc(t) {
   return {
     name: clean(t.name),
@@ -307,6 +308,22 @@ function toTestimonialDoc(t) {
     rating: Math.min(5, Math.max(1, Number(t.rating) || 5)),
     sortOrder: Number(t.sortOrder) || 0,
   };
+}
+
+/**
+ * Only the fields actually present, so a partial update - reordering a single
+ * review, say - can never blank out the rest of it.
+ */
+function toTestimonialPatch(t) {
+  const patch = {};
+  if (t.name !== undefined) patch.name = clean(t.name);
+  if (t.role !== undefined) patch.role = clean(t.role);
+  if (t.text !== undefined) patch.text = clean(t.text);
+  if (t.rating !== undefined) {
+    patch.rating = Math.min(5, Math.max(1, Number(t.rating) || 5));
+  }
+  if (t.sortOrder !== undefined) patch.sortOrder = Number(t.sortOrder) || 0;
+  return patch;
 }
 
 export async function createTestimonial(t) {
@@ -319,7 +336,9 @@ export async function createTestimonial(t) {
 }
 
 export async function updateTestimonial(id, t) {
-  await setDoc(doc(db, 'testimonials', id), toTestimonialDoc(t), { merge: true });
+  const patch = toTestimonialPatch(t);
+  if (!Object.keys(patch).length) return;
+  await setDoc(doc(db, 'testimonials', id), patch, { merge: true });
 }
 
 export async function removeTestimonial(id) {

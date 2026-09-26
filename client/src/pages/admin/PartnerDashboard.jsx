@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import Icon from '../../components/Icons';
+import TestimonialsPanel from './PartnerTestimonials';
 import { useToast } from '../../components/Toast';
 import { useAuth } from '../../context/AuthContext';
 import { useFetch } from '../../hooks';
@@ -40,9 +41,16 @@ export default function PartnerDashboard() {
   const navigate = useNavigate();
   const toast = useToast();
 
-  const [tab, setTab] = useState('products');
+  // The open tab lives in the URL, so Reviews (and anything else) can be linked
+  // to directly and survives a refresh.
+  const [params, setParams] = useSearchParams();
+  const tabParam = params.get('tab') || 'products';
   const [query, setQuery] = useState('');
   const [confirmId, setConfirmId] = useState(null);
+
+  const tabs = TABS.filter((t) => !t.ownerOnly || isOwner);
+  const tab = tabs.some((t) => t.key === tabParam) ? tabParam : 'products';
+  const setTab = (key) => setParams(key === 'products' ? {} : { tab: key });
 
   const mine = useFetch(
     () => (isOwner ? fetchAllProducts() : fetchProductsByOwner(user.email)),
@@ -63,7 +71,6 @@ export default function PartnerDashboard() {
 
   const enqList = enqs.data || [];
   const pending = (mine.data || []).filter((p) => p.status === 'pending');
-  const tabs = TABS.filter((t) => !t.ownerOnly || isOwner);
   const shown = tab === 'approvals' && isOwner ? pending : list;
 
   const logout = async () => {
@@ -341,17 +348,7 @@ export default function PartnerDashboard() {
 
         {tab === 'testimonials' && isOwner && (
           <div className="admin-pane">
-            <div className="admin-toolbar">
-              <p className="muted" style={{ margin: 0 }}>
-                Customer reviews jo home page par dikhti hain.
-              </p>
-              <Link
-                to="/partner/testimonials"
-                className="btn btn-brand btn-sm"
-              >
-                <Icon.Sparkle size={16} /> Manage Reviews
-              </Link>
-            </div>
+            <TestimonialsPanel />
           </div>
         )}
 
