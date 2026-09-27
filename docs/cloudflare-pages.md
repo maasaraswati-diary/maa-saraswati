@@ -1,5 +1,7 @@
 # Deploying to Cloudflare Pages
 
+**Live at <https://maa-saraswati-diary.pages.dev>**
+
 The site runs on the free Firebase plan, which allows **360 MB a day** of
 transfer across every visitor. The four video ads are 5.4 MB, so a few dozen
 people watching them would have used the whole day's allowance and taken the site
