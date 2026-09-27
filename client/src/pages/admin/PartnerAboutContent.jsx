@@ -15,6 +15,9 @@ const lines = (text) =>
 
 const deepCopy = (v) => JSON.parse(JSON.stringify(v));
 
+/** Remembers that the one-time rule has been dealt with, or waved away. */
+const SETUP_DISMISSED = 'ms-about-setup-dismissed';
+
 /**
  * One picture slot: pick a file, see what is there, or put the built-in photo
  * back.
@@ -198,6 +201,19 @@ export default function PartnerAboutContent() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  // The rule notice is a one-off, not something to read on every visit. It is
+  // kept out of the way once dismissed, and saving still says plainly if the
+  // rule is still missing.
+  const [setupHidden, setSetupHidden] = useState(
+    () => {
+      try {
+        return window.localStorage.getItem(SETUP_DISMISSED) === '1';
+      } catch {
+        return false;
+      }
+    }
+  );
+  const [showRule, setShowRule] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -303,29 +319,52 @@ export default function PartnerAboutContent() {
         </div>
       )}
 
-      {!loaded && (
-        <div className="notice notice-info" style={{ marginBottom: 18 }}>
+      {!loaded && !setupHidden && (
+        <div className="notice notice-info about-setup" style={{ marginBottom: 18 }}>
           <Icon.Info size={18} />
           <div>
-            <strong>One-time setup, by the owner</strong>
-            {/* <strong> is display:block inside a notice, so inline emphasis uses
-                <code> instead - otherwise every emphasised word drops to its own
-                line. */}
-            <p>
-              The text below can be edited and read back, but saving needs one
-              new Firestore rule published once. In the Firebase console open{' '}
-              <code>Firestore → Rules</code> and add this block above the closing
-              catch-all, then press <code>Publish</code>:
+            <p style={{ margin: 0 }}>
+              <strong>Saving needs one rule published once.</strong>{' '}
+              The page works as it stands — this only affects saving your changes.{' '}
+              <button
+                type="button"
+                className="link-btn"
+                onClick={() => setShowRule((v) => !v)}
+              >
+                {showRule ? 'Hide the rule' : 'Show me what to paste'}
+              </button>
             </p>
-            <pre className="rules-snippet">{`match /pageContent/{id} {
+
+            {showRule && (
+              <>
+                <p style={{ margin: '8px 0 0' }}>
+                  In the Firebase console open <code>Firestore → Rules</code> and
+                  add this above the closing catch-all, then press{' '}
+                  <code>Publish</code>:
+                </p>
+                <pre className="rules-snippet">{`match /pageContent/{id} {
   allow read: if true;
   allow write: if owner();
 }`}</pre>
-            <p>
-              Until then the About page keeps showing its built-in text, which is
-              the same words — nothing is broken.
-            </p>
+              </>
+            )}
           </div>
+          <button
+            type="button"
+            className="icon-btn about-setup-x"
+            onClick={() => {
+              setSetupHidden(true);
+              try {
+                window.localStorage.setItem(SETUP_DISMISSED, '1');
+              } catch {
+                /* storage blocked - it will just reappear next time */
+              }
+            }}
+            title="Dismiss"
+            aria-label="Dismiss"
+          >
+            <Icon.X size={15} />
+          </button>
         </div>
       )}
 
