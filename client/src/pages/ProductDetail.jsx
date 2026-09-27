@@ -4,6 +4,7 @@ import Icon, { ICON_MAP } from '../components/Icons';
 import Picture from '../components/Picture';
 import ProductImage from '../components/ProductImage';
 import ProductCard from '../components/ProductCard';
+import ImageLightbox from '../components/ImageLightbox';
 import { ErrorState, Loader } from '../components/Feedback';
 import { useToast } from '../components/Toast';
 import { discountPercent, formatPrice } from '../api';
@@ -43,12 +44,14 @@ export default function ProductDetail() {
   );
 
   const [activeImg, setActiveImg] = useState(0);
+  const [lightbox, setLightbox] = useState(false);
   const [tab, setTab] = useState('description');
   const [openFaq, setOpenFaq] = useState(0);
   const [qty, setQty] = useState(1);
 
   useEffect(() => {
     setActiveImg(0);
+    setLightbox(false);
     setTab('description');
     setQty(1);
     setOpenFaq(0);
@@ -192,8 +195,18 @@ export default function ProductDetail() {
 
   const images = product.images?.length ? product.images : [''];
 
+  const lightboxNode = lightbox ? (
+    <ImageLightbox
+      images={images}
+      index={activeImg}
+      onIndex={setActiveImg}
+      onClose={() => setLightbox(false)}
+    />
+  ) : null;
+
   return (
     <>
+      {lightboxNode}
       {/* Breadcrumb */}
       <nav className="crumbs container" aria-label="Breadcrumb">
         <Link to="/">Home</Link>
@@ -232,8 +245,19 @@ export default function ProductDetail() {
               {!product.inStock && (
                 <div className="pd-oos">Currently out of stock</div>
               )}
+              {/* The whole frame is the button now, not a hint sitting on top of
+                  it. Hover-zoom stays for a mouse; the tap is what works on a
+                  phone, and the label says so. */}
+              <button
+                type="button"
+                className="pd-zoom-hit"
+                onClick={() => setLightbox(true)}
+                aria-label={`View ${product.name} pictures full screen`}
+              />
               <div className="pd-zoom-hint">
-                <Icon.Search size={15} /> Hover to zoom
+                <Icon.Search size={15} />
+                <span className="pd-zoom-hint-touch">Tap to enlarge</span>
+                <span className="pd-zoom-hint-hover">Hover to zoom</span>
               </div>
             </div>
 

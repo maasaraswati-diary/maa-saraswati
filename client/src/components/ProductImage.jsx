@@ -11,10 +11,10 @@ import { fetchProductImage, isUploadRef, uploadIdFromRef } from '../store/db';
  * customer pays for it once and every later visit reads it straight off disk.
  */
 
-// Bumped to v3 when pictures became square-padded. The version is in the key so
-// that a change to how a picture is stored retires the old copies instead of
-// leaving visitors on a cached version of it.
-const CACHE_PREFIX = 'ms-img:v3:';
+// Bumped to v4 when the cache key learned to name the size as well as the
+// picture. The version is in the key so that a change to how a picture is stored
+// retires the old copies instead of leaving visitors on a cached version of it.
+const CACHE_PREFIX = 'ms-img:v4:';
 const CACHE_LIMIT_MB = 4;
 
 function readCache(key) {
@@ -33,7 +33,9 @@ function writeCache(key, value) {
         : value;
     if (full) window.localStorage.setItem(CACHE_PREFIX + key, full);
   } catch {
-    // Storage full or blocked - the picture still renders, just re-fetched.
+    // Storage full or blocked. Now that both sizes are kept per picture a busy
+    // shop can fill the quota, and that is the right thing to happen: the
+    // picture still renders, it is just fetched again next visit.
   }
 }
 
@@ -74,7 +76,13 @@ export default function ProductImage({
   ...rest
 }) {
   const id = isUploadRef(src) ? uploadIdFromRef(src) : null;
-  const [url, setUrl] = useState(() => (id ? readCache(id) : null));
+  // The key has to name the size, not just the picture. One upload holds two
+  // files - a small one for grids and the full one for the product page - and
+  // they were sharing one key, so whichever was cached last won everywhere. The
+  // full-screen viewer opened on a 420px thumbnail, and visiting the grid first
+  // meant the product page quietly showed that too.
+  const cacheKey = id ? `${id}:${preferThumb ? 'thumb' : 'large'}` : null;
+  const [url, setUrl] = useState(() => (cacheKey ? readCache(cacheKey) : null));
   const [failed, setFailed] = useState(false);
 
   useEffect(purgeOldCaches, []);
@@ -94,7 +102,7 @@ export default function ProductImage({
           return;
         }
         const picked = preferThumb ? img.thumb || img.large : img.large;
-        writeCache(id, picked);
+        writeCache(cacheKey, picked);
         setUrl(picked);
       })
       .catch((err) => {
@@ -106,7 +114,7 @@ export default function ProductImage({
     return () => {
       cancelled = true;
     };
-  }, [id, preferThumb, url]);
+  }, [id, cacheKey, preferThumb, url]);
 
   // While an uploaded picture is on its way, render a placeholder rather than a
   // broken image icon; if it never arrives, say so rather than spin forever.

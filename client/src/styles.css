@@ -4740,3 +4740,159 @@
   font-size: 0.78rem;
   letter-spacing: 0.02em;
 }
+
+/* ---------------------------------------------- picture viewer (lightbox) */
+
+/* The whole frame is a button, so a tap anywhere on the picture opens it. It
+   sits over the image rather than wrapping it, which keeps the badges, the
+   out-of-stock overlay and the existing hover-zoom all working untouched. */
+.pd-zoom-hit {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border: 0;
+  padding: 0;
+  background: none;
+  cursor: zoom-in;
+  border-radius: inherit;
+}
+
+.pd-main-badges,
+.pd-oos {
+  z-index: 3;
+}
+
+/* Only one of the two labels is ever the right one. */
+.pd-zoom-hint-hover {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pd-zoom-hint-touch {
+    display: none;
+  }
+  .pd-zoom-hint-hover {
+    display: inline;
+  }
+}
+
+.pd-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.pd-lightbox-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 22, 14, 0.92);
+}
+
+.pd-lightbox-figure {
+  position: relative;
+  margin: 0;
+  max-width: min(1100px, 92vw);
+  max-height: 92vh;
+  display: grid;
+  place-items: center;
+}
+
+.pd-lightbox-figure img {
+  max-width: 100%;
+  /* Shown at its stored size when it fits, rather than stretched to fill a
+     frame - a 1100px picture should look like a 1100px picture. */
+  max-height: 88vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: var(--r-lg);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5);
+}
+
+.pd-lightbox-close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 2;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--white);
+  cursor: pointer;
+}
+
+.pd-lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.pd-lightbox-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--white);
+  cursor: pointer;
+}
+
+.pd-lightbox-nav:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.pd-lightbox-prev {
+  left: 18px;
+}
+
+.pd-lightbox-next {
+  right: 18px;
+}
+
+.pd-lightbox-count {
+  position: absolute;
+  bottom: -34px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+}
+
+/* On a phone the arrows would sit under the picture, so they move below it. */
+@media (max-width: 640px) {
+  .pd-lightbox {
+    padding: 64px 12px 76px;
+  }
+  .pd-lightbox-nav {
+    top: auto;
+    bottom: 14px;
+    transform: none;
+  }
+  .pd-lightbox-prev {
+    left: 16px;
+  }
+  .pd-lightbox-next {
+    right: 16px;
+  }
+  .pd-lightbox-count {
+    bottom: -30px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pd-main:hover img {
+    transform: none;
+  }
+}
