@@ -57,9 +57,9 @@ const RUN = Date.now().toString(36).slice(-4);
  * same page now, and "empty the page, then check it is empty" would delete them.
  * So nothing is removed unless its title says it was made by a test.
  */
-const MINE = (name) => `${name} (test ${RUN})`;
-const isMine = (text) => text.includes(`(test ${RUN})`);
-const anyTestFilm = (text) => /\(test [a-z0-9]+\)/.test(text);
+const MINE = (name) => `[${RUN}] ${name}`;
+const isMine = (text) => text.includes(`[${RUN}]`);
+const anyTestFilm = (text) => /\[[a-z0-9]{4}\] /.test(text);
 const email = process.env.SITE_EMAIL;
 const password = process.env.SITE_PASSWORD;
 
@@ -175,7 +175,7 @@ await page.waitForTimeout(2000);
 let tidied = 0;
 let tidiedErrors = 0;
 for (let attempt = 0; attempt < 20; attempt += 1) {
-  const left = (await (await page.request.get(`${BASE}/api/videos?fresh=1`)).json()).videos;
+  const left = (await (await page.request.get(`${BASE}/api/videos`)).json()).videos;
   if (!left.length) break;
   const rows = (await page.locator('.vid-row').allInnerTexts()).map((t) => t.split('\n')[0]);
   const stale = rows.findIndex((t) => anyTestFilm(t));
@@ -471,7 +471,7 @@ await page.goto(`${BASE}/partner/products?tab=videos`, { waitUntil: 'domcontentl
 await page.locator('.vid-row').first().waitFor({ timeout: 30000 });
 
 await row.locator('button[title="Change the title"]').click();
-await page.locator('.vid-row input.input').first().fill(`Paneer, cut this morning (new, test ${RUN})`);
+await page.locator('.vid-row input.input').first().fill(MINE('Paneer, cut this morning (new)'));
 await page.locator('.vid-row .btn-brand').click();
 await page.waitForTimeout(2500);
 check(
@@ -490,43 +490,57 @@ const second = MINE('Ghee, churned by hand');
   await page.waitForTimeout(400);
   await page.fill('#video-title', second);
   await page.fill('#video-note', 'From cultured white butter, in small batches.');
+  const rowsBeforeSecond = await page.locator('.vid-row').count();
   await page.click('.vid-panel .card.form-card .btn-brand');
-  await page.waitForFunction(
-    () => document.querySelectorAll('.vid-row').length >= 2,
-    null,
-    { timeout: 120000 }
-  );
-  check(true, 'a second film is added');
-
-  const newestFirst = await page.locator('.vid-row').allInnerTexts();
+  // Wait for this film by name, not for the row count to grow. The count grows
+  // when any row arrives, and a list that already holds the shop's own films
+  // makes "more rows than before" true for all the wrong reasons.
+  await page
+    .waitForFunction(
+      (t) =>
+        [...document.querySelectorAll('.vid-row strong')].some((e) => e.textContent.includes(t)),
+      second,
+      { timeout: 120000 }
+    )
+    .catch(() => {});
   check(
-    newestFirst[0].includes(second),
-    `the newest film is at the top of the list (order: ${newestFirst
-      .map((t) => t.split('\n')[0])
-      .join(' / ')})`
+    (await page.locator('.vid-row').allInnerTexts()).some((t) => t.includes(second)) &&
+      (await page.locator('.vid-row').count()) > rowsBeforeSecond,
+    'a second film is added'
+  );
+
+  // Everything below finds its row by name. The shop's own films are on this page
+  // now, so a position is not a thing that can be assumed - only a name is.
+  const rows = async () => (await page.locator('.vid-row').allInnerTexts()).map((t) => t.split('\n')[0].trim());
+  const at = async (title) => (await rows()).indexOf(title);
+
+  check(
+    (await at(second)) === 0,
+    `the newest film is at the top of the list (order: ${(await rows()).join(' / ')})`
   );
 
   // Move it down. The panel sends the whole order, so the order on screen and the
   // order stored cannot fall out of step.
-  await page.locator('.vid-row').first().locator('button[title="Move down"]').click();
+  const from = await at(second);
+  await page.locator('.vid-row').nth(from).locator('button[title="Move down"]').click();
   await page.waitForTimeout(2500);
 
-  const afterMove = await page.locator('.vid-row').allInnerTexts();
-  check(afterMove[1].includes(second), `a film can be moved down (order: ${afterMove
-    .map((t) => t.split('\n')[0])
-    .join(' / ')})`);
-  check(afterMove[0].includes('(new)'), 'and the one above it moved up');
+  const landed = await at(second);
+  check(landed === from + 1, `a film can be moved down (it went to ${landed} from ${from}: ${(await rows()).join(' / ')})`);
 
   const stored = (await (await page.request.get(`${BASE}/api/videos`)).json()).videos;
-  check(stored[1]?.title === second, `and the new order is what was stored (${stored.map((v) => v.title).join(' / ')})`);
+  check(
+    stored[landed]?.title === second,
+    `and the new order is what was stored (${stored.map((v) => v.title).join(' / ')})`
+  );
 
   // And the public page follows it.
   await page.goto(`${BASE}/videos`, { waitUntil: 'domcontentloaded' });
   await page.locator('.vcard').first().waitFor({ timeout: 30000 });
   await page.waitForTimeout(1500);
-  const order = await page.locator('.vcard').allInnerTexts();
+  const order = (await page.locator('.vcard').allInnerTexts()).map((t) => t.split('\n')[0].trim());
   check(
-    order[1].includes(second),
+    order[landed]?.includes(second),
     'and the website shows the films in that order too'
   );
 }
@@ -576,7 +590,7 @@ for (let attempt = 0; attempt < 20; attempt += 1) {
 
   // Pointed at this run's film, not at the top of the page.
   const rows = (await page.locator('.vid-row').allInnerTexts()).map((t) => t.split('\n')[0]);
-  const at = rows.findIndex((t) => t.includes(`(test ${RUN})`));
+  const at = rows.findIndex((t) => t.includes(`[${RUN}]`));
   if (at < 0) {
     check(false, 'the film this run added is no longer in the list');
     break;
@@ -594,10 +608,10 @@ for (let attempt = 0; attempt < 20; attempt += 1) {
   await page
     .waitForFunction(
       async (want) =>
-        (await (await fetch('/api/videos?fresh=1')).json()).videos.filter((v) =>
+        (await (await fetch('/api/videos')).json()).videos.filter((v) =>
           v.title.includes(want)
         ).length === 0,
-      `(test ${RUN})`,
+      `[${RUN}]`,
       { timeout: 30000, polling: 500 }
     )
     .catch(() => {});

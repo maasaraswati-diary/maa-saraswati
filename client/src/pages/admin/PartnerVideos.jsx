@@ -11,6 +11,7 @@ import {
   updateVideo,
   uploadVideo,
 } from '../../store/videos';
+import { announceFilmChange } from '../../store/filmChannel';
 import { fileSize, makePosterFrame } from '../../lib/videoPoster';
 
 /** When a film went up, in a form worth reading. */
@@ -95,6 +96,7 @@ export default function PartnerVideos() {
       const poster = await makePosterFrame(file);
       setStage(`Uploading ${fileSize(file.size)}…`);
       const res = await uploadVideo({ file, title: title.trim(), note: note.trim(), poster });
+      announceFilmChange();
       toast.success(`"${res.video.title}" is now on the video page.`);
       setFile(null);
       setTitle('');
@@ -123,6 +125,7 @@ export default function PartnerVideos() {
     setBusy(true);
     try {
       await updateVideo(key, { title: editTitle.trim(), note: editNote.trim() });
+      announceFilmChange();
       toast.success('Saved.');
       setPending(null);
       list.reload();
@@ -141,6 +144,7 @@ export default function PartnerVideos() {
     setBusy(true);
     try {
       await reorderVideos(next.map((v) => v.slug));
+      announceFilmChange();
       list.reload();
       toast.success('The order is saved.');
     } catch (err) {
@@ -153,6 +157,7 @@ export default function PartnerVideos() {
     setBusy(true);
     try {
       const res = await deleteVideo(key);
+      announceFilmChange();
       setConfirm(null);
       list.reload();
       toast.success(`Removed. ${res.total} film${res.total === 1 ? '' : 's'} left.`);
@@ -381,21 +386,10 @@ export default function PartnerVideos() {
                     <>
                       <strong className="vid-title">{v.title}</strong>
                       {v.note && <span className="vid-note">{v.note}</span>}
-                      {/* A film whose file has gone is listed but cannot play.
-                          Visitors never see it - the page only offers films it
-                          can actually serve - but it is shown here so it can be
-                          taken off the list rather than sitting there for ever. */}
-                      {v.missing ? (
-                        <span className="vid-missing">
-                          <Icon.Alert size={14} /> The file is missing, so this plays nothing.
-                          Remove it to tidy the page.
-                        </span>
-                      ) : (
-                        <span className="hint">
-                          {fileSize(v.size)}
-                          {addedWhen(v.added) ? ` · added ${addedWhen(v.added)}` : ''}
-                        </span>
-                      )}
+                      <span className="hint">
+                        {fileSize(v.size)}
+                        {addedWhen(v.added) ? ` · added ${addedWhen(v.added)}` : ''}
+                      </span>
                     </>
                   )}
                 </div>

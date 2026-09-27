@@ -45,8 +45,6 @@ const INDEX = {
 const FIRESTORE = `https://firestore.googleapis.com/v1/projects/${INDEX.project}/databases/(default)/documents`;
 
 /** The document holding the list, named so the catalogue can recognise it. */
-export const INDEX_DOC = INDEX.doc;
-
 /** The largest film that will be accepted, in bytes.
  *
  * KV's own limit is 25 MB, and the panel sends the file inside a JSON body which
@@ -89,88 +87,12 @@ export const posterKey = (name) => `poster:${name}`;
  * `fresh` is accepted and ignored. It asked for the truth rather than the copy;
  * now that there is only one answer, everything is it.
  */
-export async function listFilms(env, ctx, { fresh = false } = {}) {
-  void ctx;
-  void fresh;
+export async function listFilms(env) {
   const truth = await firestoreList();
   if (truth === null) {
     throw new Error('The list of films could not be read just now. Please try again.');
   }
   return truth;
-}
-
-/**
- * Every film actually in the store, by name.
- *
- * A KV list call returns names only - it does not read the films - so this is one
- * cheap read however many films there are.
- */
-export async function storedFilmNames(env) {
-  const names = new Set();
-  let cursor;
-  do {
-    const page = await env.VIDEOS.list({ prefix: 'film:', limit: 1000, cursor });
-    for (const k of page?.keys || []) names.add(k.name.slice('film:'.length));
-    cursor = page?.list_complete ? undefined : page?.cursor;
-  } while (cursor);
-  return names;
-}
-
-/**
- * How long a film is left alone before it is checked for.
- *
- * A KV listing is eventually consistent just as a read is, so a film that was
- * stored a moment ago may not appear in one yet. Filtering on that basis hid
- * every newly uploaded film for a minute or two, which looked exactly like the
- * upload having failed. A film younger than this is taken on trust; an older one
- * is checked.
- */
-const VERIFY_AFTER_MS = 5 * 60 * 1000;
-
-/**
- * The keys of films that are listed but are not in the store.
- *
- * The list is derived from the store, so the store is the truth. An entry whose
- * film has gone would draw a card that plays nothing, and that is the one
- * failure a customer notices and blames the shop for - worse than a film simply
- * not being on the page.
- *
- * Only films old enough to have settled are checked, because a KV listing is
- * eventually consistent just as a read is. This was the cause of a warning
- * appearing on a film that had been uploaded seconds earlier and was perfectly
- * fine: the film was stored, but the listing had not caught up, so it read as
- * absent. A film younger than the limit is taken on trust, in the panel and on
- * the public page alike - one rule for both, because they were disagreeing and
- * only one of them had the guard.
- *
- * In practice the ordering already prevents a name without a film: a film is
- * stored before it is listed, and unlisted before it is removed. This catches the
- * leftovers of an earlier mistake rather than waiting for a new one.
- */
-export async function missingFilmKeys(env, videos) {
-  const now = Date.now();
-  // An entry with no usable date is left alone. It cannot be judged old enough
-  // to check, and an entry too new to check is safer than one wrongly judged.
-  const settled = videos.filter((v) => {
-    const added = Date.parse(v.added);
-    return Number.isFinite(added) && now - added > VERIFY_AFTER_MS;
-  });
-  if (!settled.length) return new Set();
-  try {
-    const have = await storedFilmNames(env);
-    return new Set(settled.filter((v) => !have.has(v.key)).map((v) => v.key));
-  } catch {
-    // If the store cannot be asked, nothing is called missing. Saying a film has
-    // gone when nobody has looked is worse than showing a card that might not
-    // play.
-    return new Set();
-  }
-}
-
-/** The films that can actually be played, in order. */
-export async function onlyFilmsThatExist(env, videos) {
-  const gone = await missingFilmKeys(env, videos);
-  return gone.size ? videos.filter((v) => !gone.has(v.key)) : videos;
 }
 
 /** The list, from Firestore. Null means it could not be read - not that it is empty. */
@@ -285,9 +207,6 @@ export function publicVideo(entry) {
     poster: entry.posterFile ? `/media/posters/${entry.key}` : '',
     size: entry.size || 0,
     added: entry.added || '',
-    // A film the list holds whose file has gone. Shown to the owner so it can be
-    // removed; never shown to a visitor.
-    missing: Boolean(entry.missing),
   };
 }
 

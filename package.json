@@ -24,7 +24,7 @@
     "video:list": "node client/scripts/add-video.mjs --list",
     "video:move": "node client/scripts/move-built-in-films.mjs",
     "video:restore": "node client/scripts/restore-films.mjs",
-    "test:e2e": "node e2e/panel-smoke.mjs && node e2e/gallery-preview.mjs && node e2e/video-upload.mjs",
+    "test:e2e": "node e2e/panel-smoke.mjs && node e2e/gallery-preview.mjs && node e2e/films-agree.mjs && node e2e/video-upload.mjs",
     "test:videos": "node e2e/video-upload.mjs"
   },
   "devDependencies": {

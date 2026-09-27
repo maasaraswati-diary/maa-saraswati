@@ -20,8 +20,6 @@ import {
   isSafeKey,
   json,
   listFilms,
-  missingFilmKeys,
-  onlyFilmsThatExist,
   posterKey,
   publicVideo,
   readIndex,
@@ -32,40 +30,33 @@ import {
 } from '../_lib/videos.js';
 
 /**
- * The list of films.
+ * The list of films. One answer, for everyone who asks.
  *
- * A visitor gets only the films that can actually be played. The panel asks for
- * `?fresh=1` and gets everything the list holds, including a film whose file has
- * gone - marked rather than hidden. Hiding it from the panel would leave the
- * owner with something they can neither see nor remove, and a page they cannot
- * clear.
+ * The public page used to be given a filtered version - films whose file had gone
+ * were held back, so a card could never appear that plays nothing - while the
+ * panel was given all of them. That is a difference by design, and it is exactly
+ * why the two could count differently: the owner removed a film, the panel
+ * showed one number and the website another, and the gap was the filter doing
+ * its job.
+ *
+ * The filter bought a hypothetical. A film whose file has gone cannot be made by
+ * this code - a film is stored before it is listed, and unlisted before it is
+ * removed - and the panel shows anything odd that does appear, flagged, so it
+ * can be dealt with. Set against that, two places disagreeing about how many
+ * films there are is a real fault and it was reported four times.
+ *
+ * So the list is the list, and the two cannot fall out of step.
  */
-export async function onRequestGet({ request, env, waitUntil }) {
+export async function onRequestGet({ env }) {
   if (!storageAvailable(env)) return json({ available: false, videos: [] });
-  const fresh = new URL(request.url).searchParams.get('fresh') === '1';
-
-  let videos;
   try {
-    videos = await listFilms(env, { waitUntil }, { fresh });
+    const videos = await listFilms(env);
+    return json({ available: true, videos: videos.map(publicVideo) });
   } catch (err) {
     // Said plainly rather than answered with an empty list. An empty list is a
     // thing the owner acts on - they take films down, or believe they are gone.
     return json({ error: err?.message || 'The list of films could not be read.' }, 503);
   }
-
-  if (!fresh) {
-    // Only what can actually be played. See onlyFilmsThatExist.
-    return json({ available: true, videos: (await onlyFilmsThatExist(env, videos)).map(publicVideo) });
-  }
-
-  // The panel is shown everything the list holds, including a film whose file has
-  // gone - marked, not hidden, because a film the owner can neither see nor
-  // remove is a film that stays for ever. The same age rule as the public page
-  // applies: a film uploaded a moment ago is not missing just because the store's
-  // listing has not caught up.
-  const gone = await missingFilmKeys(env, videos);
-  const marked = videos.map((v) => (gone.has(v.key) ? { ...v, missing: true } : v));
-  return json({ available: true, videos: marked.map(publicVideo) });
 }
 
 /** Add a film. */
@@ -103,12 +94,9 @@ export async function onRequestPost({ request, env }) {
     );
   }
 
-  // Read through, and through the store, so that a name left behind by an
-  // earlier failure is cleaned out of the list on the way past rather than
-  // lingering in it.
   let existing;
   try {
-    existing = await onlyFilmsThatExist(env, await readIndex());
+    existing = await readIndex();
   } catch (err) {
     // Refused rather than carried on with an empty list: the next write would
     // then be one that erases every other film.

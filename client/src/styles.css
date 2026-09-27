@@ -5341,15 +5341,3 @@
   color: var(--brand);
 }
 
-.vid-missing {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--brand);
-  font-size: 0.82rem;
-  line-height: 1.45;
-}
-
-.vid-missing svg {
-  flex: none;
-}

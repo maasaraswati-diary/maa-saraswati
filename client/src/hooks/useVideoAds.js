@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { fetchVideoList } from '../store/videos';
+import { onFilmChange } from '../store/filmChannel';
 import { VIDEO_ADS } from '../videoAds';
 
 /**
@@ -76,8 +77,13 @@ export function useVideoAds() {
   }, [read]);
 
   useEffect(() => {
-    // Straight away on coming back, for the person who has just been in the
-    // panel. Guarded, because one click can raise several of these.
+    // Straight away, from the panel that made the change, in the tab next to it.
+    // This is what closes the gap the owner keeps looking across.
+    const stop = onFilmChange(() => read());
+
+    // For changes made anywhere else - the desktop tool, a phone, another tab
+    // signed in somewhere - and for a window that was brought forward without
+    // saying so. Guarded, because one click can raise several of these.
     const whenBack = () => {
       if (document.visibilityState !== 'visible') return;
       if (Date.now() - lastCheck < FOCUS_FLOOR_MS) return;
@@ -92,6 +98,7 @@ export function useVideoAds() {
     window.addEventListener('focus', whenBack);
     const timer = setInterval(onTick, RECHECK_EVERY_MS);
     return () => {
+      stop();
       document.removeEventListener('visibilitychange', whenBack);
       window.removeEventListener('focus', whenBack);
       clearInterval(timer);
