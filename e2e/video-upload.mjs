@@ -47,6 +47,19 @@ const BASE = process.env.SITE_URL || 'https://maa-saraswati-diary.pages.dev';
  * something quietly pass against the wrong row.
  */
 const RUN = Date.now().toString(36).slice(-4);
+
+/**
+ * Marks every film this run creates, and the only films it will ever remove.
+ *
+ * The tidy at the start and the clear at the end both go through the panel's
+ * own buttons, which remove whatever row they are pointed at. That is right for
+ * testing them and disastrous for real data: the shop's own films are on the
+ * same page now, and "empty the page, then check it is empty" would delete them.
+ * So nothing is removed unless its title says it was made by a test.
+ */
+const MINE = (name) => `${name} (test ${RUN})`;
+const isMine = (text) => text.includes(`(test ${RUN})`);
+const anyTestFilm = (text) => /\(test [a-z0-9]+\)/.test(text);
 const email = process.env.SITE_EMAIL;
 const password = process.env.SITE_PASSWORD;
 
@@ -164,6 +177,9 @@ let tidiedErrors = 0;
 for (let attempt = 0; attempt < 20; attempt += 1) {
   const left = (await (await page.request.get(`${BASE}/api/videos?fresh=1`)).json()).videos;
   if (!left.length) break;
+  const rows = (await page.locator('.vid-row').allInnerTexts()).map((t) => t.split('\n')[0]);
+  const stale = rows.findIndex((t) => anyTestFilm(t));
+  if (stale < 0) break; // nothing a test left behind; the shop's films stay
   const ready = await Promise.race([
     page.locator('.vid-row').first().waitFor({ timeout: 15000 }).then(() => 'row'),
     page.locator('.error-state').first().waitFor({ timeout: 15000 }).then(() => 'error'),
@@ -175,7 +191,7 @@ for (let attempt = 0; attempt < 20; attempt += 1) {
     await page.locator('.vid-panel').waitFor({ timeout: 30000 });
     continue;
   }
-  await page.locator('.vid-row').first().locator('button[title="Remove this film"]').click();
+  await page.locator('.vid-row').nth(stale).locator('button[title="Remove this film"]').click();
   await page.locator('.modal').waitFor({ timeout: 10000 });
   await page.locator('.modal .btn-red').click();
   await page
@@ -189,9 +205,10 @@ for (let attempt = 0; attempt < 20; attempt += 1) {
 }
 if (tidied) console.log(`  (tidied ${tidied} film(s) left by an earlier run)`);
 
+const beforeRun = (await (await page.request.get(`${BASE}/api/videos?fresh=1`)).json()).videos;
 check(
-  (await (await page.request.get(`${BASE}/api/videos?fresh=1`)).json()).videos.length === 0,
-  'the page starts with no films, whatever an earlier run left behind'
+  beforeRun.every((v) => !anyTestFilm(v.title) || isMine(v.title)),
+  `the page starts with no films from this test, whatever an earlier run left behind (${beforeRun.length} film(s) left alone)`
 );
 
 await page.goto(`${BASE}/partner/products?tab=videos`, { waitUntil: 'domcontentloaded' });
@@ -207,7 +224,7 @@ check(
 
 /* ---------------------------------------------------------------- upload */
 
-const title = `Paneer, cut this morning ${RUN}`;
+const title = MINE('Paneer, cut this morning');
 await page.setInputFiles('#video-file', VIDEO);
 await page.waitForTimeout(500);
 check(
@@ -454,7 +471,7 @@ await page.goto(`${BASE}/partner/products?tab=videos`, { waitUntil: 'domcontentl
 await page.locator('.vid-row').first().waitFor({ timeout: 30000 });
 
 await row.locator('button[title="Change the title"]').click();
-await page.locator('.vid-row input.input').first().fill(`Paneer, cut this morning (new) ${RUN}`);
+await page.locator('.vid-row input.input').first().fill(`Paneer, cut this morning (new, test ${RUN})`);
 await page.locator('.vid-row .btn-brand').click();
 await page.waitForTimeout(2500);
 check(
@@ -466,7 +483,7 @@ check(
 
 // A second film, so there is an order to change. It is a few kilobytes rather
 // than megabytes - the point is the ordering, not the picture.
-const second = `Ghee, churned by hand ${RUN}`;
+const second = MINE('Ghee, churned by hand');
 {
   const tiny = tinyFilm('tiny-ghee.mp4');
   await page.setInputFiles('#video-file', tiny);
@@ -531,7 +548,9 @@ const listNow = async () => (await (await page.request.get(`${BASE}/api/videos?f
 let askedAboutRemoving = false;
 let transient = 0;
 for (let attempt = 0; attempt < 20; attempt += 1) {
-  const left = await listNow();
+  // Only this run's own films, named by the marker in their titles. The shop's
+  // films are on the same page and are not touched whatever happens here.
+  const left = (await listNow()).filter((v) => isMine(v.title));
   if (!left.length) break;
   await page.goto(`${BASE}/partner/products?tab=videos`, { waitUntil: 'domcontentloaded' });
   await page.locator('.vid-panel').waitFor({ timeout: 30000 });
@@ -555,7 +574,14 @@ for (let attempt = 0; attempt < 20; attempt += 1) {
     break;
   }
 
-  await page.locator('.vid-row').first().locator('button[title="Remove this film"]').click();
+  // Pointed at this run's film, not at the top of the page.
+  const rows = (await page.locator('.vid-row').allInnerTexts()).map((t) => t.split('\n')[0]);
+  const at = rows.findIndex((t) => t.includes(`(test ${RUN})`));
+  if (at < 0) {
+    check(false, 'the film this run added is no longer in the list');
+    break;
+  }
+  await page.locator('.vid-row').nth(at).locator('button[title="Remove this film"]').click();
   await page.locator('.modal').waitFor({ timeout: 10000 });
   if (!askedAboutRemoving) {
     check(true, 'removing asks first, because it cannot be undone');
@@ -567,8 +593,11 @@ for (let attempt = 0; attempt < 20; attempt += 1) {
   // mistakes for the end.
   await page
     .waitForFunction(
-      async (want) => (await (await fetch('/api/videos?fresh=1')).json()).videos.length < want,
-      left.length,
+      async (want) =>
+        (await (await fetch('/api/videos?fresh=1')).json()).videos.filter((v) =>
+          v.title.includes(want)
+        ).length === 0,
+      `(test ${RUN})`,
       { timeout: 30000, polling: 500 }
     )
     .catch(() => {});
@@ -576,10 +605,17 @@ for (let attempt = 0; attempt < 20; attempt += 1) {
 if (transient) check(true, `the list stayed readable (${transient} transient hiccup(s) shown as an error, not as an empty page)`);
 
 const after = await listNow();
-check(after.length === 0, `every film is off the page again (${after.length} left)`);
+check(
+  after.every((v) => !isMine(v.title)),
+  `every film this run added is off the page again (${after.filter((v) => isMine(v.title)).length} left)`
+);
 check(
   !after.some((v) => v.title.includes('(new)')),
   'including the one that was renamed'
+);
+check(
+  after.length === beforeRun.length && beforeRun.every((b) => after.some((a) => a.key === b.key)),
+  `and nothing else was touched (${after.length} film(s) still on the page, all of them as they were)`
 );
 
 {
