@@ -58,6 +58,12 @@ export const Icon = {
       <path d="M7 4l12 8-12 8z" />
     </Svg>
   ),
+  // Four corners moving outwards - the usual full screen mark.
+  Expand: (p) => (
+    <Svg {...p}>
+      <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+    </Svg>
+  ),
   Check: (p) => (
     <Svg {...p}>
       <path d="M20 6L9 17l-5-5" />

@@ -18,6 +18,7 @@ import Picture from './Picture';
 export default function VideoCard({ ad, index }) {
   const [playing, setPlaying] = useState(false);
   const frameRef = useRef(null);
+  const videoRef = useRef(null);
 
   const onYouTube = Boolean(ad.youtube);
 
@@ -28,6 +29,31 @@ export default function VideoCard({ ad, index }) {
       frameRef.current?.querySelector('video, iframe')?.focus?.();
     });
   };
+
+  /**
+   * Put the film full screen.
+   *
+   * The standard requestFullscreen is not available on iOS for a video at all -
+   * Safari gives a video element its own player, entered a different way. Both
+   * are tried so the button works on a phone as well as a computer, and neither
+   * one is a problem to leave unsupported: the browser's own fullscreen button in
+   * the controls still works.
+   */
+  const goFullscreen = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    const el = v.webkitEnterFullscreen || v.webkitRequestFullscreen;
+    if (typeof el === 'function' && el !== v.requestFullscreen) {
+      el.call(v);
+      return;
+    }
+    const req = v.requestFullscreen || v.webkitRequestFullscreen;
+    if (typeof req === 'function') {
+      const p = req.call(v);
+      if (p && typeof p.catch === 'function') p.catch(() => {});
+    }
+  };
+
 
   return (
     <article className={`vcard reveal reveal-d${(index % 3) + 1}`}>
@@ -42,15 +68,31 @@ export default function VideoCard({ ad, index }) {
               allowFullScreen
             />
           ) : (
-            <video
-              className="vcard-video"
-              src={ad.src}
-              poster={ad.poster}
-              controls
-              autoPlay
-              playsInline
-              preload="metadata"
-            />
+            <>
+              <video
+                className="vcard-video"
+                ref={videoRef}
+                src={ad.src}
+                poster={ad.poster}
+                controls
+                autoPlay
+                playsInline
+                webkit-playsinline="true"
+                preload="metadata"
+              />
+              {/* A full screen button of our own. The browser's is buried in the
+                  controls and looks different on every platform; this one is
+                  always in the same place. */}
+              <button
+                type="button"
+                className="vcard-expand"
+                onClick={goFullscreen}
+                aria-label={`Play ${ad.title} full screen`}
+                title="Full screen"
+              >
+                <Icon.Expand size={16} />
+              </button>
+            </>
           )
         ) : (
           <button
