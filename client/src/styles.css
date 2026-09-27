@@ -2433,6 +2433,21 @@
   margin: 0 auto 16px;
 }
 
+/* A team member's own photograph, once the owner uploads one. The circle was
+   built for initials, so it needs clipping and a filling image on top. */
+.team-avatar-photo {
+  overflow: hidden;
+  background: var(--sand);
+}
+
+.team-avatar-photo img,
+.team-avatar-photo .img-loading {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 .team-name {
   font-size: 1.16rem;
   margin-bottom: 4px;
@@ -4717,4 +4732,20 @@
   color: #93a49b;
   font-size: 0.78rem;
   letter-spacing: 0.02em;
+}
+
+/* The one-time Firestore rule the owner has to paste into the console. Shown
+   verbatim in the panel so there is nothing to mistype. */
+.rules-snippet {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  background: var(--sand);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md, 10px);
+  padding: 12px 14px;
+  margin: 10px 0;
+  overflow-x: auto;
+  white-space: pre;
+  color: var(--ink);
 }

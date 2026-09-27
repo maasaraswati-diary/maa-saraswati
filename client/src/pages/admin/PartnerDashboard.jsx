@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 import Icon from '../../components/Icons';
 import ProductImage from '../../components/ProductImage';
 import TestimonialsPanel from './PartnerTestimonials';
+import PartnerAboutContent from './PartnerAboutContent';
 import { useToast } from '../../components/Toast';
 import { useAuth } from '../../context/AuthContext';
 import { useFetch, usePageMeta } from '../../hooks';
@@ -24,6 +25,7 @@ const TABS = [
   { key: 'products', label: 'My Products', icon: 'Grid' },
   { key: 'approvals', label: 'Approvals', icon: 'Check', ownerOnly: true },
   { key: 'testimonials', label: 'Reviews', icon: 'Sparkle', ownerOnly: true },
+  { key: 'about', label: 'About Page', icon: 'Star', ownerOnly: true },
   { key: 'enquiries', label: 'Enquiries', icon: 'Inbox', ownerOnly: true },
 ];
 
@@ -411,6 +413,12 @@ export default function PartnerDashboard() {
         {tab === 'testimonials' && isOwner && (
           <div className="admin-pane">
             <TestimonialsPanel />
+          </div>
+        )}
+
+        {tab === 'about' && isOwner && (
+          <div className="admin-pane">
+            <PartnerAboutContent />
           </div>
         )}
 

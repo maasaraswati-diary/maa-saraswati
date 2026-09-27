@@ -11,6 +11,9 @@ rules_version = '2';
 //  testimonials - the customer reviews on the home page. Public to read,
 //              owner-only to write.
 //  enquiries - anyone may send one; only the owner can read them.
+//  pageContent - the editable text on the About page. Public to read, like the
+//              storefront, because the page is public; owner-only to write, so
+//              nobody but the shop can put words in the company's mouth.
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -79,6 +82,16 @@ service cloud.firestore {
         && request.resource.data.large.size() < 900000
         && request.resource.data.thumb.size() < 300000;
       allow update, delete: if owner();
+    }
+
+    // ---------- pageContent : the About page, written from the panel ----------
+    // The About page reads its text from here so the owner can change it without
+    // a deploy. Open to read, because the page itself is public - exactly the
+    // bargain the storefront gets. Only the owner may write, so a partner cannot
+    // rewrite the company's story.
+    match /pageContent/{id} {
+      allow read: if true;
+      allow write: if owner();
     }
 
     // ---------- enquiries ----------

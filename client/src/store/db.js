@@ -19,6 +19,7 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { db } from '../firebase';
+import { ABOUT_DOC_ID } from '../aboutContent';
 
 const nowIso = () => new Date().toISOString();
 const newId = () =>
@@ -519,4 +520,35 @@ export async function seedIfEmpty(products, owner) {
   });
   await batch.commit();
   return { written: products.length, skipped: false };
+}
+
+/* ------------------------------------------------------------- about page */
+
+/**
+ * The About page keeps its words in Firestore so the owner can change them from
+ * the panel. Public to read, owner-only to write - see `pageContent` in
+ * firestore.rules.
+ *
+ * A missing document is not an error: it just means nothing has been saved yet,
+ * and the page falls back to the copy in aboutContent.js.
+ */
+export async function fetchAboutContent() {
+  try {
+    const snap = await getDoc(doc(db, 'pageContent', ABOUT_DOC_ID));
+    return snap.exists() ? snap.data() : null;
+  } catch (e) {
+    // A read failure must not take the page down; the defaults are a fine page.
+    console.warn('[about] could not load saved content:', e?.message || e);
+    return null;
+  }
+}
+
+/** Writes the whole document, so there is no merge to get wrong. */
+export async function saveAboutContent(content, user) {
+  await setDoc(doc(db, 'pageContent', ABOUT_DOC_ID), {
+    ...content,
+    updatedAt: nowIso(),
+    updatedBy: user?.email || '',
+  });
+  return true;
 }
