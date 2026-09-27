@@ -110,12 +110,18 @@ even on the free tier. Nothing is charged while usage stays inside the free
 allowance, but the card has to be there, which is why this step was left for the
 owner to do rather than done from a machine that could not.
 
-1. Dashboard → **R2** → enable. A card is requested; that is expected.
-2. `npx wrangler r2 bucket create maa-videos`
-3. Uncomment the `[[r2_buckets]]` block in `wrangler.toml` — publishing a
-   Function that names a bucket which does not exist is refused outright, so the
-   site cannot be deployed at all while the line is live.
-4. `npm run deploy:pages`
+1. Dashboard → **R2** → enable. A card is requested; that is expected. The
+   partner panel's Videos tab links straight to this page, so it does not have to
+   be found by hand.
+2. `npm run r2:enable`
+
+`r2:enable` is the whole of the rest, and it is one script because each step
+forgets itself otherwise: it creates the bucket, puts the binding into
+`wrangler.toml` — publishing a Function that names a bucket which does not exist
+is refused outright, so that cannot be left as something to remember — builds,
+publishes, and then checks the site reports that storage is on. Running it twice
+is harmless. If R2 has not been bought it stops at the first step and says so,
+rather than half-way through leaving a site that will not publish.
 
 Until then the site is not broken and does not pretend otherwise: the functions
 notice the missing binding and say so, the public video page goes on serving the

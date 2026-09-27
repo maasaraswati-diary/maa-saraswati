@@ -5321,3 +5321,22 @@
   gap: 8px;
   margin-top: 18px;
 }
+
+.notice-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.notice-actions .btn {
+  background: var(--white);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.notice-actions .btn:hover {
+  border-color: var(--brand);
+  color: var(--brand);
+}

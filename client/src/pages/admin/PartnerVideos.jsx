@@ -13,9 +13,18 @@ import {
 } from '../../store/videos';
 import { fileSize, makePosterFrame } from '../../lib/videoPoster';
 
+/**
+ * The Cloudflare account the films will be stored in.
+ *
+ * R2 can only be bought in the dashboard, by hand, with a card - there is no way
+ * to do it from a script. So rather than describing where to go, the panel
+ * links straight to the page, which is the one place this can be done and the
+ * only step in the whole thing that needs a person.
+ */
+const CLOUDFLARE_ACCOUNT = '5fd337a931f515e3bfbcf864454dfce2';
+
 /** When a film went up, in a form worth reading. */
-function addedWhen(iso) {
-  if (!iso) return '';
+function addedWhen(iso) {  if (!iso) return '';
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '';
   return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -202,8 +211,22 @@ export default function PartnerVideos() {
           <Icon.Alert size={18} />
           <div>
             <strong>Films cannot be uploaded yet.</strong> Cloudflare's R2 storage has to be
-            switched on in the Cloudflare dashboard first. The website is still showing the films it
-            was built with, so nothing is broken in the meantime.
+            switched on in the Cloudflare dashboard first — it asks for a card, and nothing is
+            charged while usage stays inside the free allowance. The website is still showing the
+            films it was built with, so nothing is broken in the meantime.
+            <div className="notice-actions">
+              <a
+                className="btn btn-sm"
+                href={`https://dash.cloudflare.com/${CLOUDFLARE_ACCOUNT}/r2/overview`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open the R2 page <Icon.ArrowRight size={15} />
+              </a>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={list.reload}>
+                <Icon.Refresh size={15} /> I have done it — check again
+              </button>
+            </div>
           </div>
         </div>
       )}
