@@ -8,7 +8,7 @@ import { ErrorState, Loader } from '../components/Feedback';
 import { useToast } from '../components/Toast';
 import { discountPercent, formatPrice } from '../api';
 import { getProduct } from '../catalogue';
-import { useFetch } from '../hooks';
+import { useFetch, usePageMeta } from '../hooks';
 
 const TABS = [
   { key: 'description', label: 'Description' },
@@ -21,7 +21,7 @@ function Stars({ rating = 0, count, size = 16 }) {
   const full = Math.round(rating);
   return (
     <div className="pd-rating">
-      <span className="pd-stars" aria-label={`Rated ${rating} out of 5`}>
+      <span className="pd-stars" role="img" aria-label={`Rated ${rating} out of 5`}>
         {Array.from({ length: 5 }).map((_, i) => (
           <Icon.Star key={i} size={size} style={{ opacity: i < full ? 1 : 0.22 }} />
         ))}
@@ -58,12 +58,17 @@ export default function ProductDetail() {
   const product = data?.product;
   const related = data?.related || [];
 
-  useEffect(() => {
-    if (product) document.title = `${product.name} | MAA SARASWATI`;
-    return () => {
-      document.title = 'MAA SARASWATI | Pure Dairy, Fresh Every Day';
-    };
-  }, [product]);
+  // Title, description, share preview and canonical link all follow the product.
+  usePageMeta({
+    title: product ? `${product.name}` : '',
+    description: product
+      ? `${product.shortDescription || product.name} - ${formatPrice(product.price)} for ${
+          product.packSize || product.unit
+        }. ${(product.highlights || []).slice(0, 3).join('. ')}`
+      : '',
+    image: product?.image,
+    type: 'product',
+  });
 
   const off = product ? discountPercent(product.price, product.mrp) : 0;
 
@@ -404,7 +409,7 @@ export default function ProductDetail() {
                     <span className="pdf-ic">
                       <I size={24} />
                     </span>
-                    <h3 className="pdf-title">{f.title}</h3>
+                    <h2 className="pdf-title">{f.title}</h2>
                     <p className="pdf-text">{f.text}</p>
                   </div>
                 );
@@ -468,7 +473,7 @@ export default function ProductDetail() {
             </div>
             <div className="grid grid-products">
               {related.map((p, i) => (
-                <ProductCard key={p.id} product={p} index={i + 1} />
+                <ProductCard key={p.id} product={p} index={i + 1} headingLevel={2} />
               ))}
             </div>
           </div>

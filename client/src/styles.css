@@ -2832,7 +2832,7 @@
 }
 
 .footer-contact .muted {
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.52);
 }
 
 .footer-btn {
@@ -2872,7 +2872,7 @@
 .footer-note {
   text-align: center;
   font-size: 0.76rem;
-  color: rgba(255, 255, 255, 0.38);
+  color: rgba(255, 255, 255, 0.52);
   padding: 14px 24px 20px;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
@@ -4446,27 +4446,47 @@
 .tst-dots {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0;
 }
 
+/* The dot stays 9px, but the button around it is 24px - a 9px target is
+   almost impossible to hit with a thumb, and WCAG asks for 24px. */
 .tst-dot {
-  width: 9px;
-  height: 9px;
+  position: relative;
+  width: 24px;
+  height: 24px;
   padding: 0;
   border: 0;
+  background: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.tst-dot::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 9px;
+  height: 9px;
+  transform: translate(-50%, -50%);
   border-radius: 50%;
   background: var(--line);
-  cursor: pointer;
   transition: background 0.2s, transform 0.2s;
 }
 
-.tst-dot:hover {
+.tst-dot:hover::before {
   background: var(--brand-soft);
 }
 
-.tst-dot.on {
+.tst-dot.on::before {
   background: var(--brand);
-  transform: scale(1.25);
+  transform: translate(-50%, -50%) scale(1.25);
+}
+
+.tst-dot:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: -2px;
 }
 
 /* Review text inside the admin table. */
@@ -4590,27 +4610,47 @@
 .tst-dots {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0;
 }
 
+/* The dot stays 9px, but the button around it is 24px - a 9px target is
+   almost impossible to hit with a thumb, and WCAG asks for 24px. */
 .tst-dot {
-  width: 9px;
-  height: 9px;
+  position: relative;
+  width: 24px;
+  height: 24px;
   padding: 0;
   border: 0;
+  background: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.tst-dot::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 9px;
+  height: 9px;
+  transform: translate(-50%, -50%);
   border-radius: 50%;
   background: var(--line);
-  cursor: pointer;
   transition: background 0.2s, transform 0.2s;
 }
 
-.tst-dot:hover {
+.tst-dot:hover::before {
   background: var(--brand-soft);
 }
 
-.tst-dot.on {
+.tst-dot.on::before {
   background: var(--brand);
-  transform: scale(1.25);
+  transform: translate(-50%, -50%) scale(1.25);
+}
+
+.tst-dot:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: -2px;
 }
 
 /* Auto-advance toggle, sitting just after the arrows. */

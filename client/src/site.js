@@ -14,8 +14,10 @@ export const SITE = {
   whatsapp: 'https://wa.me/919814391854',
 
   // --- email ---
-  email: 'kunalkalia261085@gmail.com',
-  emailHref: 'mailto:kunalkalia261085@gmail.com',
+  // The address customers write to. The owner signs in to the partner panel
+  // with a different account, so that one is kept in AuthContext instead.
+  email: 'maasaraswati449@gmail.com',
+  emailHref: 'mailto:maasaraswati449@gmail.com',
 
   // --- address ---
   addressLines: [

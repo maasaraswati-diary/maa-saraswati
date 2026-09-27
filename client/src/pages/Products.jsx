@@ -9,7 +9,7 @@ import {
   PageHeader,
 } from '../components/Feedback';
 import { getProducts, getCategories } from '../catalogue';
-import { useDebounced, useFetch } from '../hooks';
+import { useDebounced, useFetch, usePageMeta } from '../hooks';
 
 const SORTS = [
   { value: 'popular', label: 'Most Popular' },
@@ -20,6 +20,11 @@ const SORTS = [
 ];
 
 export default function Products() {
+  usePageMeta({
+    title: 'Our Products',
+    description:
+      'Browse the full Maa Saraswati range: milk, paneer, cheese, curd, cream, butter, ghee and rose lassi. Honest labelling, small batches, delivered fresh in Gurdaspur.',
+  });
   const [params, setParams] = useSearchParams();
   const [query, setQuery] = useState(params.get('q') || '');
   const [sort, setSort] = useState('popular');
@@ -197,7 +202,7 @@ export default function Products() {
           {!loading && !error && products.length > 0 && (
             <div className="grid grid-products" key={`${category}-${debouncedQuery}-${sort}`}>
               {products.map((p, i) => (
-                <ProductCard key={p.id} product={p} index={i + 1} />
+                <ProductCard key={p.id} product={p} index={i + 1} headingLevel={2} />
               ))}
             </div>
           )}

@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import Icon from '../../components/Icons';
 import ProductImage from '../../components/ProductImage';
 import TestimonialsPanel from './PartnerTestimonials';
 import { useToast } from '../../components/Toast';
 import { useAuth } from '../../context/AuthContext';
-import { useFetch } from '../../hooks';
+import { useFetch, usePageMeta } from '../../hooks';
 import {
   fetchProductsByOwner,
   fetchAllProducts,
@@ -39,6 +39,7 @@ function StatusBadge({ status }) {
 }
 
 export default function PartnerDashboard() {
+  usePageMeta({ title: 'Partner Panel', description: 'Manage products, approvals, reviews and enquiries.', noIndex: true });
   const { user, isOwner, signOut } = useAuth();
   const navigate = useNavigate();
   const { pathname, search } = useLocation();
@@ -70,18 +71,26 @@ export default function PartnerDashboard() {
    * stale image with nothing to indicate it. Only the owner can put a document
    * in the storefront collection, so this runs when the owner opens the panel
    * and quietly lines them up again.
+   *
+   * Two things it must not do. It must not announce itself: this is routine
+   * housekeeping, not something the owner has to read or act on. And it must
+   * run only once per visit - the repair re-reads the list, which would change
+   * `mine.data` and start the effect all over again, and two overlapping runs
+   * would each see the same out-of-date storefront and each report a repair.
    */
+  const repairedOnVisit = useRef(false);
+
   useEffect(() => {
-    if (!isOwner || !mine.data?.length) return;
+    if (!isOwner || !mine.data?.length || repairedOnVisit.current) return;
+    repairedOnVisit.current = true;
     let cancelled = false;
 
     syncShopWithApproved(mine.data)
       .then(({ repaired, removed }) => {
         if (cancelled || (!repaired && !removed.length)) return;
-        toast.info(
-          `Storefront refreshed: ${repaired} product(s) brought up to date` +
-            (removed.length ? `, ${removed.length} unpublished` : '') +
-            '.'
+        console.info(
+          `[storefront] ${repaired} product(s) brought up to date` +
+            (removed.length ? `, ${removed.length} unpublished` : '')
         );
         mine.reload();
       })
@@ -243,7 +252,11 @@ export default function PartnerDashboard() {
               </Link>
             </div>
 
-            {mine.loading && <p className="muted" style={{ padding: 20 }}>Loading…</p>}
+            {/* Only while there is genuinely nothing to show. A background refresh
+            must not drop a "Loading…" line above a table that is already there. */}
+        {mine.loading && shown.length === 0 && (
+          <p className="muted" style={{ padding: 20 }}>Loading…</p>
+        )}
 
             {!mine.loading && shown.length === 0 ? (
               <div className="error-state">
@@ -292,7 +305,13 @@ export default function PartnerDashboard() {
                             <div>
                               <strong>{p.shortName || p.name}</strong>
                               <span className="muted">
-                                {isOwner && p.ownerEmail ? `${p.ownerEmail} · ` : ''}/{p.slug}
+                                {/* Whose product it is, but only when it is not the
+                                    owner's own - their address is already on screen
+                                    and repeating it under all 8 rows is just noise. */}
+                                {isOwner && p.ownerEmail && p.ownerEmail !== user?.email
+                                  ? `${p.ownerEmail} · `
+                                  : ''}
+                                /{p.slug}
                               </span>
                             </div>
                           </div>
@@ -341,13 +360,13 @@ export default function PartnerDashboard() {
                                   className="icon-btn danger"
                                   onClick={() => {
                                     const note = window.prompt(
-                                      'Customer ko kya batana hai? (wajah likhein)',
+                                      'Reason for rejection (shown to the customer)',
                                       'Please correct these details and send it again.'
                                     );
                                     if (note === null) return;
                                     rejectProduct(p.id, note || 'Rejected by shop owner')
                                       .then(() => {
-                                        toast.success('Product wapas bhej diya gaya.');
+                                        toast.success('Product sent for approval again.');
                                         mine.reload();
                                       })
                                       .catch((e) => toast.error(e.message));
@@ -403,7 +422,7 @@ export default function PartnerDashboard() {
                   <Icon.Inbox size={28} />
                 </span>
                 <h3 className="h3">No enquiries yet</h3>
-                <p className="muted">Contact form se aayi enquiries yahan dikhenge.</p>
+                <p className="muted">Enquiries sent from the contact form will appear here.</p>
               </div>
             ) : (
               <div className="enq-admin-list">

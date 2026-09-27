@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import Icon from '../components/Icons';
 import Picture from '../components/Picture';
 import { PageHeader } from '../components/Feedback';
+import { usePageMeta } from '../hooks';
 
 const TIMELINE = [
   {
@@ -73,6 +74,11 @@ const TEAM = [
 ];
 
 export default function About() {
+  usePageMeta({
+    title: 'About Us',
+    description:
+      'A family dairy in Kahnuwaan Chowk, Gurdaspur. Grass-fed cows, our own chilling plant and testing lab, and the same promise since 1998.',
+  });
   return (
     <>
       <PageHeader

@@ -13,6 +13,7 @@ import {
 } from '../../store/db';
 import { getCategories } from '../../catalogue';
 import { optimiseImage, prettyBytes } from '../../lib/imageOptimiser';
+import { usePageMeta } from '../../hooks';
 
 const ICON_CHOICES = [
   'drop', 'shield', 'nutrition', 'family', 'muscle',
@@ -44,6 +45,7 @@ const lines = (text) =>
  * shop owner for approval.
  */
 export default function PartnerProductForm() {
+  usePageMeta({ title: isEdit ? 'Edit Product' : 'Add Product', description: 'Add or edit a product in the Maa Saraswati catalogue.', noIndex: true });
   const { id } = useParams();
   const isEdit = Boolean(id) && id !== 'new';
   const { user, isOwner } = useAuth();
@@ -167,7 +169,7 @@ export default function PartnerProductForm() {
 
   const validate = () => {
     const e = {};
-    if (form.name.trim().length < 2) e.name = 'Product ka naam likhein.';
+    if (form.name.trim().length < 2) e.name = 'Please enter the product name.';
     if (!form.price || Number(form.price) <= 0) e.price = 'Enter the correct selling price.';
     if (form.mrp && Number(form.mrp) < Number(form.price))
       e.mrp = 'MRP cannot be lower than the selling price.';

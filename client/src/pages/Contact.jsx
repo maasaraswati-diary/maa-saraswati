@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import Icon from '../components/Icons';
 import EnquiryForm from '../components/EnquiryForm';
 import SITE from '../site';
+import { usePageMeta } from '../hooks';
 
 const CONTACT_CARDS = [
   {
@@ -52,6 +53,11 @@ const FAQS = [
 ];
 
 export default function Contact() {
+  usePageMeta({
+    title: 'Contact',
+    description:
+      'Call +91 98143 91854 or send an enquiry for bulk orders, wholesale supply, delivery routes and retail partnerships in Gurdaspur. We reply the same day.',
+  });
   const [params] = useSearchParams();
   const [prefill, setPrefill] = useState({ message: '', product: '' });
   const [openFaq, setOpenFaq] = useState(0);
@@ -96,7 +102,7 @@ export default function Contact() {
                   <span className="cc-icon">
                     <I size={24} />
                   </span>
-                  <h3 className="cc-title">{c.title}</h3>
+                  <h2 className="cc-title">{c.title}</h2>
                   {c.lines.map((l) => (
                     <span key={l} className="cc-line">
                       {l}

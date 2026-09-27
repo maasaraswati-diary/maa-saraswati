@@ -59,7 +59,7 @@ export default function TestimonialsPanel() {
     const e = {};
     if (form.name.trim().length < 2) e.name = 'Enter the customer name.';
     if (form.text.trim().length < 10) e.text = 'Please write a slightly longer review.';
-    if (form.text.trim().length > 600) e.text = '600 characters se kam rakhein.';
+    if (form.text.trim().length > 600) e.text = 'Please keep it under 600 characters.';
     setErrors(e);
     if (Object.keys(e).length) return;
 
@@ -86,10 +86,10 @@ export default function TestimonialsPanel() {
   };
 
   const del = async (t) => {
-    if (!window.confirm(`"${t.name}" ki review hatani hai?`)) return;
+    if (!window.confirm(`Delete the review from "${t.name}"?`)) return;
     try {
       await removeTestimonial(t.id);
-      toast.success('Review hat gayi.');
+      toast.success('Review deleted.');
       reload();
     } catch (err) {
       toast.error(err?.message || 'Could not delete.');

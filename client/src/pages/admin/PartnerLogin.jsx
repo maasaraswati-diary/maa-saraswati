@@ -5,6 +5,7 @@ import Logo from '../../components/Logo';
 import { useToast } from '../../components/Toast';
 import { useAuth } from '../../context/AuthContext';
 import { isFirebaseConfigured } from '../../firebase';
+import { usePageMeta } from '../../hooks';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -15,6 +16,8 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
  * reviews each one, so a product only appears on the storefront after approval.
  */
 export default function PartnerLogin() {
+  // The panel is not for search engines.
+  usePageMeta({ title: 'Partner Sign In', description: 'Sign in to manage your products.', noIndex: true });
   const { signIn, signUp, resetPassword, user, isOwner } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
@@ -77,7 +80,7 @@ export default function PartnerLogin() {
     }
     try {
       await resetPassword(email.trim());
-      toast.success('Password reset email bhej diya hai. Check your inbox.');
+      toast.success('Password reset email sent. Please check your inbox.');
     } catch (err) {
       toast.error(err?.message || 'Could not send the reset email.');
     }

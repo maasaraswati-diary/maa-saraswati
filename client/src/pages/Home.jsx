@@ -6,7 +6,7 @@ import ProductCard from '../components/ProductCard';
 import { CardSkeleton, ErrorState } from '../components/Feedback';
 import { formatPrice } from '../api';
 import { getProducts, getTestimonials } from '../catalogue';
-import { useFetch } from '../hooks';
+import { useFetch, usePageMeta } from '../hooks';
 
 const STATS = [
   { icon: 'Award', value: '25+', label: 'Years of trust' },
@@ -97,7 +97,9 @@ const FAQS = [
 
 function StarRow({ n = 5, size = 15 }) {
   return (
-    <div className="star-row" aria-label={`${n} out of 5 stars`}>
+    // role="img" is what makes the label reach a screen reader: a bare div is
+    // skipped, and the stars would otherwise be announced as five stray icons.
+    <div className="star-row" role="img" aria-label={`${n} out of 5 stars`}>
       {Array.from({ length: 5 }).map((_, i) => (
         <Icon.Star
           key={i}
@@ -135,6 +137,10 @@ function QuoteCard({ t }) {
 }
 
 export default function Home() {
+  usePageMeta({
+    description:
+      'Pasteurised milk, high-protein paneer, pure ghee and cultured curd from Maa Saraswati, Gurdaspur. 100% vegetarian, no artificial additives, delivered fresh every morning.',
+  });
   const { data, loading, error, reload } = useFetch(() => getProducts(), []);
   const [openFaq, setOpenFaq] = useState(0);
   const [activeSlide, setActiveSlide] = useState(0);

@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
+export { default as usePageMeta } from './usePageMeta';
+
 /**
  * Fetches data on mount and whenever `deps` change.
  * Returns { data, loading, error, reload }.

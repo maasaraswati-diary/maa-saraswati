@@ -22,7 +22,10 @@
   --sand: #f3faf1;
   --ink: #0e1f16;
   --ink-2: #33463b;
-  --muted: #6b7d72;
+  /* Slightly deeper than it looks like it needs to be: on the cream page
+     background the old value sat at 4.29:1, just under the 4.5:1 that WCAG
+     asks for. Same hue, 4% darker, 4.59:1. */
+  --muted: #67786d;
   --line: #dce9df;
   --white: #ffffff;
 

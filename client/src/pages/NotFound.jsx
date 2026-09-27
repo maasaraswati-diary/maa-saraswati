@@ -1,7 +1,13 @@
 import { Link } from 'react-router-dom';
 import Icon from '../components/Icons';
+import { usePageMeta } from '../hooks';
 
 export default function NotFound() {
+  usePageMeta({
+    title: 'Page not found',
+    description: 'This page could not be found.',
+    noIndex: true,
+  });
   return (
     <section className="nf-sec">
       <div className="nf-bg" aria-hidden="true" />

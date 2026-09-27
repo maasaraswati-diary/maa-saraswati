@@ -4,10 +4,18 @@ import Icon, { ICON_MAP } from './Icons';
 import ProductImage from './ProductImage';
 import { formatPrice, discountPercent } from '../api';
 
-export default function ProductCard({ product, index = 0 }) {
+/**
+ * `headingLevel` exists because the same card is used in two different places.
+ * On the home page a grid sits under an <h2> section title, so the product name
+ * belongs at <h3>. On the products listing the grid follows the page <h1>
+ * directly, where an <h3> would skip a level. The caller decides; the default
+ * is the home page case, which is the more nested of the two.
+ */
+export default function ProductCard({ product, index = 0, headingLevel = 3 }) {
   const [imgOk, setImgOk] = useState(true);
   const off = discountPercent(product.price, product.mrp);
   const highlights = (product.highlights || []).slice(0, 3);
+  const Heading = `h${headingLevel}`;
 
   return (
     <Link
@@ -58,7 +66,7 @@ export default function ProductCard({ product, index = 0 }) {
           </span>
         </div>
 
-        <h3 className="pcard-title">{product.shortName || product.name}</h3>
+        <Heading className="pcard-title">{product.shortName || product.name}</Heading>
         <p className="pcard-desc">{product.shortDescription}</p>
 
         {highlights.length > 0 && (

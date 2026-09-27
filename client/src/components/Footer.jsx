@@ -95,7 +95,7 @@ export default function Footer() {
           <div className="footer-cols">
             {COLUMNS.map((col) => (
               <div key={col.title} className="footer-col">
-                <h4 className="footer-col-title">{col.title}</h4>
+                <h3 className="footer-col-title">{col.title}</h3>
                 <ul>
                   {col.links.map((l) => (
                     <li key={l.label}>
@@ -110,7 +110,7 @@ export default function Footer() {
           </div>
 
           <div className="footer-contact">
-            <h4 className="footer-col-title">Get In Touch</h4>
+            <h3 className="footer-col-title">Get In Touch</h3>
             <ul className="footer-contact-list">
               <li>
                 <span className="fc-icon">

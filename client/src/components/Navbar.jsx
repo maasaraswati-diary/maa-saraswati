@@ -55,7 +55,9 @@ export default function Navbar() {
 
       <header className={`nav ${scrolled ? 'nav-stuck' : ''}`}>
         <div className="container nav-in">
-          <Link to="/" className="brand" aria-label="Maa Saraswati home">
+          {/* No aria-label here on purpose: the logo text already reads as the link
+          name, and overriding it hides the words a screen reader would say. */}
+      <Link to="/" className="brand">
             <Logo size={44} />
             <span className="brand-text">
               <span className="brand-name">MAA SARASWATI</span>

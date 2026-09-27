@@ -1,0 +1,12 @@
+# Maa Saraswati Dairy - Gurdaspur
+# Everything here is meant to be found.
+
+User-agent: *
+Allow: /
+
+# The partner panel is a private workspace, not part of the public site.
+Disallow: /partner
+Disallow: /partner/
+
+# Nothing to hide, and no paid or duplicate pages to advertise.
+# Maps still point crawlers at the canonical address.
