@@ -46,31 +46,62 @@ const load = (file) =>
   });
 
 /**
- * Draws the picture whole, centred on a square of `edge` pixels.
+ * Draws the picture onto a square of `edge` pixels.
  *
- * The square is never larger than the photo's own long edge, so a small picture
- * is not blown up and then surrounded by an ocean of white - it just gains the
- * few pixels of padding it actually needs.
+ * `pad` decides what happens to a picture that is not square.
+ *
+ *  true  - the whole picture is kept and the difference is padded. Right for the
+ *          product frames, which are square and show the image edge to edge, so
+ *          cropping would throw away part of what the shop photographed.
+ *
+ *  false - the picture is centre-cropped to fill the square instead. Right for
+ *          anything shown in a circle. A padded portrait put in a round frame
+ *          gains nothing, because the circle cuts the sides off regardless; all
+ *          it does is leave a band of padding inside the circle, which makes the
+ *          photograph look smaller than the space it has. A face should fill the
+ *          space it is given.
  */
-function draw(img, edge) {
-  const long = Math.max(img.naturalWidth, img.naturalHeight);
+function draw(img, edge, pad) {
+  const natW = img.naturalWidth;
+  const natH = img.naturalHeight;
+  const long = Math.max(natW, natH);
   const square = Math.max(1, Math.round(Math.min(edge, long)));
-  const scale = square / long;
 
-  const w = Math.max(1, Math.round(img.naturalWidth * scale));
-  const h = Math.max(1, Math.round(img.naturalHeight * scale));
+  let sx = 0;
+  let sy = 0;
+  let sw = natW;
+  let sh = natH;
+
+  if (!pad) {
+    // Take the largest centred square out of the source.
+    const side = Math.min(natW, natH);
+    sx = Math.round((natW - side) / 2);
+    sy = Math.round((natH - side) / 2);
+    sw = side;
+    sh = side;
+  }
+
+  const scale = square / Math.max(sw, sh);
+  const w = Math.max(1, Math.round(sw * scale));
+  const h = Math.max(1, Math.round(sh * scale));
 
   const canvas = document.createElement('canvas');
   canvas.width = square;
   canvas.height = square;
   const ctx = canvas.getContext('2d');
   ctx.imageSmoothingQuality = 'high';
-  // Fill first: a photo with transparency, or an edge antialiasing gap, would
-  // otherwise show whatever the canvas defaults to.
-  ctx.fillStyle = PAD_BACKGROUND;
-  ctx.fillRect(0, 0, square, square);
+  if (pad) {
+    // Fill first: a photo with transparency, or an edge antialiasing gap, would
+    // otherwise show whatever the canvas defaults to.
+    ctx.fillStyle = PAD_BACKGROUND;
+    ctx.fillRect(0, 0, square, square);
+  }
   ctx.drawImage(
     img,
+    sx,
+    sy,
+    sw,
+    sh,
     Math.round((square - w) / 2),
     Math.round((square - h) / 2),
     w,
@@ -98,11 +129,11 @@ const toDataUrl = (canvas, quality) =>
   });
 
 /** Encodes progressively smaller until the data URL fits the budget. */
-async function encode(img, edge) {
+async function encode(img, edge, pad) {
   let quality = QUALITY;
   let size = edge;
   for (let attempt = 0; attempt < 5; attempt += 1) {
-    const { canvas, w, h } = draw(img, size);
+    const { canvas, w, h } = draw(img, size, pad);
     // eslint-disable-next-line no-await-in-loop
     const dataUrl = await toDataUrl(canvas, quality);
     if (dataUrl.length * 0.75 <= BUDGET_BYTES || attempt === 4) {
@@ -115,10 +146,13 @@ async function encode(img, edge) {
 }
 
 /**
+ * @param {File} file
+ * @param {{pad?: boolean}} [options] `pad: false` centre-crops to a square
+ *   instead of padding, for pictures that are shown inside a circle.
  * @returns {{large: object, thumb: object, originalBytes: number}} data URLs
  *   ready to be written to Firestore.
  */
-export async function optimiseImage(file) {
+export async function optimiseImage(file, { pad = true } = {}) {
   if (!file) throw new Error('No file was chosen.');
   if (!/^image\//.test(file.type)) {
     throw new Error('Only image files work here (JPG, PNG or WebP).');
@@ -126,8 +160,8 @@ export async function optimiseImage(file) {
 
   const img = await load(file);
   const [large, thumb] = await Promise.all([
-    encode(img, LARGE_EDGE),
-    encode(img, THUMB_EDGE),
+    encode(img, LARGE_EDGE, pad),
+    encode(img, THUMB_EDGE, pad),
   ]);
 
   return {

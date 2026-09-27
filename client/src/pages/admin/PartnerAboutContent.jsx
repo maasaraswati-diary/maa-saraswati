@@ -40,7 +40,10 @@ function ImageField({ label, value, onChange, onBusy, shape = 'wide' }) {
     onBusy?.(true);
     setMsg(`${file.name} is being compressed…`);
     try {
-      const shot = await optimiseImage(file);
+      // A round avatar crops whatever it is given, so padding a portrait first
+      // would only leave a band of white inside the circle and make the person
+      // look smaller. Crop to fill instead.
+      const shot = await optimiseImage(file, { pad: shape !== 'avatar' });
       setMsg(
         `${file.name} is uploading (${prettyBytes(file.size)} → ${prettyBytes(shot.large.bytes)})`
       );
@@ -90,6 +93,12 @@ function ImageField({ label, value, onChange, onBusy, shape = 'wide' }) {
         )}
         {msg && <span className="hint">{msg}</span>}
       </div>
+      {shape === 'avatar' && (
+        <span className="hint">
+          Shown as a round photo. A portrait is cropped to fill the circle, so
+          put the face in the middle of the picture.
+        </span>
+      )}
       <div
         style={{
           marginTop: 10,

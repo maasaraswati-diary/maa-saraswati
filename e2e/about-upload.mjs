@@ -106,6 +106,15 @@ try {
     .locator('.team-card .team-avatar-photo img')
     .first()
     .waitFor({ state: 'attached', timeout: 20000 });
+  // Attached is not decoded. The picture arrives as a data URL read out of
+  // Firestore, so naturalWidth is still 0 for a moment after the element exists
+  // - and reading it then is a race that fails on a fast connection less often
+  // than on a slow one. decode() resolves when there is genuinely something to
+  // measure.
+  await pub
+    .locator('.team-card .team-avatar-photo img')
+    .first()
+    .evaluate((img) => img.decode().catch(() => {}));
 
   const shown = await pub.evaluate(() => {
     const img = document.querySelector('.team-card .team-avatar-photo img');
