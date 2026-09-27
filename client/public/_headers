@@ -1,0 +1,31 @@
+# Cloudflare Pages headers. The Cloudflare equivalent of the hosting section in
+# firebase.json, which stays in place for as long as Firebase is still serving
+# this site.
+
+# Fingerprinted assets - the file name changes whenever the contents do, so a
+# copy can be kept for a year and never be stale.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Photographs and the poster frames. Not fingerprinted, but they only change
+# when a picture is replaced, which is rare enough to cache hard.
+/images/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# The films. A range request has to be allowed, or seeking and restarting a
+# video does not work, and Firefox refuses to play it at all without one.
+# Content-Type is set because a .mp4 is otherwise sometimes sent as a download.
+/videos/*
+  Cache-Control: public, max-age=31536000, immutable
+  Accept-Ranges: bytes
+  Content-Type: video/mp4
+
+# The page itself must never be cached, or a deploy would not reach anyone.
+/index.html
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: SAMEORIGIN
+  Permissions-Policy: geolocation=(), microphone=(), camera=()

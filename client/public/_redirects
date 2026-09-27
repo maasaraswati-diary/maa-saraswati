@@ -1,0 +1,10 @@
+# Cloudflare Pages rewrites.
+#
+# This site is a single-page app: every route is served by the same index.html
+# and the router picks the screen. Without this, opening /products directly - or
+# sharing a link to a product - would 404.
+#
+# Static files are served first, so this only catches paths that match no file.
+# The video files under /videos are therefore unaffected.
+
+/*    /index.html   200

@@ -15,7 +15,10 @@
     "deploy": "npm run build && firebase deploy",
     "deploy:hosting": "npm run build && firebase deploy --only hosting",
     "deploy:api": "firebase deploy --only functions",
-    "logs": "firebase functions:log"
+    "logs": "firebase functions:log",
+    "deploy:pages": "npm run build && wrangler pages deploy client/dist --project-name maa-saraswati-diary --branch main",
+    "deploy:pages:check": "npm run build && wrangler pages deploy client/dist --project-name maa-saraswati-diary --branch main --dry-run",
+    "pages:login": "wrangler login"
   },
   "devDependencies": {
     "concurrently": "^9.0.1",
