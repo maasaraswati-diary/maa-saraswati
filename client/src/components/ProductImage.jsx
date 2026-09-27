@@ -85,6 +85,26 @@ export default function ProductImage({
   const [url, setUrl] = useState(() => (cacheKey ? readCache(cacheKey) : null));
   const [failed, setFailed] = useState(false);
 
+  /**
+   * A different picture has to start over.
+   *
+   * The state above is only seeded on the first mount, and the fetch below
+   * gives up whenever there is already a url. So when the gallery moved to
+   * another picture, the component kept the previous one on screen forever: the
+   * thumbnail highlight moved and the large picture did not. Both sizes are the
+   * same pixel dimensions, which is why it passed a check that only compared
+   * width and height.
+   *
+   * Adjusted during render rather than in an effect, so the swap happens before
+   * anything is painted and there is no frame showing the wrong picture.
+   */
+  const [shownKey, setShownKey] = useState(cacheKey);
+  if (shownKey !== cacheKey) {
+    setShownKey(cacheKey);
+    setUrl(cacheKey ? readCache(cacheKey) : null);
+    setFailed(false);
+  }
+
   useEffect(purgeOldCaches, []);
 
   useEffect(() => {

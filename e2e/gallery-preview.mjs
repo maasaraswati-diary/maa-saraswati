@@ -56,6 +56,47 @@ for (const [name, options] of [
     const thumbs = await page.locator('.pd-thumb').count();
     check(thumbs > 1, `the gallery has more than one picture (${thumbs})`);
 
+    // A thumb only has hasTouch on the phone context, so tap there and click
+    // here rather than pretending a mouse can tap.
+    const act = (loc) => (name.startsWith('phone') ? loc.tap() : loc.click());
+
+    // Which picture is on screen, identified by its actual bytes. Waits for the
+    // image to be there: while a new picture is being fetched the component
+    // shows a placeholder instead, so the element is briefly absent by design.
+    const shown = async () => {
+      await page.locator('.pd-main img').waitFor({ state: 'attached', timeout: 15000 });
+      return page.evaluate(() => {
+        const im = document.querySelector('.pd-main img');
+        return (im.currentSrc || im.src).slice(-40);
+      });
+    };
+
+    // Choosing a thumbnail has to bring up that picture, not merely move the
+    // highlight. Every picture is stored at the same dimensions, so comparing
+    // width and height proves nothing - the picture has to be compared by
+    // content, and the four have to come out as four different ones.
+    const atStart = await shown();
+    const seen = new Set([atStart]);
+    let everyThumbSwapped = true;
+    for (let i = 1; i < thumbs; i += 1) {
+      await act(page.locator('.pd-thumb').nth(i));
+      const now = await shown();
+      seen.add(now);
+      const active = await page.evaluate(
+        (idx) =>
+          Array.from(document.querySelectorAll('.pd-thumb')).findIndex((t) =>
+            t.classList.contains('active')
+          ),
+        i
+      );
+      if (active !== i || now === atStart) everyThumbSwapped = false;
+    }
+    check(everyThumbSwapped, 'each thumbnail brings up its own picture');
+    check(seen.size === thumbs, `all ${thumbs} pictures are different (${seen.size} seen)`);
+
+    await act(page.locator('.pd-thumb').first());
+    check((await shown()) === atStart, 'the first thumbnail goes back');
+
     // Measured in this viewport, not against a desktop number: a phone page box
     // is about 360px wide, so comparing to 582 would be meaningless.
     const pageBox = await page.evaluate(() =>
