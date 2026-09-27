@@ -15,22 +15,34 @@ import { VIDEO_ADS } from '../videoAds';
  *    films built into the build are the floor the site stands on, not a
  *    second source of truth - once films are in the panel, that is the list.
  *
- * It re-reads when the tab comes back to the front, asking for the list of record
- * rather than the fast copy. The person most likely to have just removed a film
- * is the owner, sitting with the panel in one tab and the website in the other;
- * without this the website carries on showing a film they have already deleted.
+ * It re-reads when the tab comes back to the front, and every half minute while
+ * it is being looked at. The person most likely to have just removed a film is
+ * the owner, sitting with the panel in one tab and the website in the other;
+ * without this the website carries on showing a film they have already deleted,
+ * and the page is not so much stale as wrong.
  *
- * "Of record" matters as much as re-reading. The copy the visitors are served
- * can be up to a minute behind, because that is how long the store keeps it -
- * which is the right trade for a page of films and the wrong one for the person
- * who just pressed a button. A tab being brought back to the front is a rare
- * event next to a page being opened, so it is not worth spending the store's
- * allowance on. There is a floor on how often it may happen, because switching
- * between tabs is easy to do by accident.
+ * Both were added because a cached copy of the list sat behind this, and the
+ * same need to check on focus. That copy is gone: it could be a minute behind,
+ * which is the wrong answer for the person who has just pressed a button, and a
+ * read of one small document is not worth trading that for.
+ *
+ * The interval only runs while the page is in front. A tab nobody is looking at
+ * costs nothing, and a browser slows a background tab's timers down anyway, so
+ * this is a handful of reads a day for a page that gets few visitors - against an
+ * allowance of fifty thousand.
+ *
+ * The tick and the floor are kept apart, and that is not tidiness. One number
+ * doing both jobs put the tick a few milliseconds short of its own limit, so it
+ * was turned away and the page re-read every second tick instead of every tick.
+ * The interval is the rate limit now; the floor only guards the events, which
+ * can arrive in bursts - clicking between tabs raises several at once.
  */
-const MIN_RECHECK_MS = 20000;
+const RECHECK_EVERY_MS = 20000;
 
-/** How long a focus may go without costing a read, however often it fires. */
+/** A re-read brought on by a focus may not come sooner than this. */
+const FOCUS_FLOOR_MS = 8000;
+
+/** When the page was last read, so the floor can be applied. */
 let lastCheck = 0;
 
 export function useVideoAds() {
@@ -41,9 +53,9 @@ export function useVideoAds() {
     reason: '',
   });
 
-  const read = useCallback(async ({ fresh = false } = {}) => {
+  const read = useCallback(async () => {
     try {
-      const { available, videos } = await fetchVideoList({ fresh });
+      const { available, videos } = await fetchVideoList();
       lastCheck = Date.now();
       setState({
         ads: videos.length ? videos : VIDEO_ADS,
@@ -64,16 +76,25 @@ export function useVideoAds() {
   }, [read]);
 
   useEffect(() => {
+    // Straight away on coming back, for the person who has just been in the
+    // panel. Guarded, because one click can raise several of these.
     const whenBack = () => {
       if (document.visibilityState !== 'visible') return;
-      if (Date.now() - lastCheck < MIN_RECHECK_MS) return;
-      read({ fresh: true });
+      if (Date.now() - lastCheck < FOCUS_FLOOR_MS) return;
+      read();
+    };
+    // The interval is the rate limit in its own right, so it only has to ask
+    // whether anyone is looking.
+    const onTick = () => {
+      if (document.visibilityState === 'visible') read();
     };
     document.addEventListener('visibilitychange', whenBack);
     window.addEventListener('focus', whenBack);
+    const timer = setInterval(onTick, RECHECK_EVERY_MS);
     return () => {
       document.removeEventListener('visibilitychange', whenBack);
       window.removeEventListener('focus', whenBack);
+      clearInterval(timer);
     };
   }, [read]);
 

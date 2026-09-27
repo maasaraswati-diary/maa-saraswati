@@ -20,13 +20,13 @@ import {
   isSafeKey,
   json,
   listFilms,
+  missingFilmKeys,
   onlyFilmsThatExist,
   posterKey,
   publicVideo,
   readIndex,
   slugify,
   storageAvailable,
-  storedFilmNames,
   uniqueKey,
   writeIndex,
 } from '../_lib/videos.js';
@@ -58,15 +58,13 @@ export async function onRequestGet({ request, env, waitUntil }) {
     return json({ available: true, videos: (await onlyFilmsThatExist(env, videos)).map(publicVideo) });
   }
 
-  let have = null;
-  try {
-    have = await storedFilmNames(env);
-  } catch {
-    have = null;
-  }
-  const marked = have
-    ? videos.map((v) => (have.has(v.key) ? v : { ...v, missing: true }))
-    : videos;
+  // The panel is shown everything the list holds, including a film whose file has
+  // gone - marked, not hidden, because a film the owner can neither see nor
+  // remove is a film that stays for ever. The same age rule as the public page
+  // applies: a film uploaded a moment ago is not missing just because the store's
+  // listing has not caught up.
+  const gone = await missingFilmKeys(env, videos);
+  const marked = videos.map((v) => (gone.has(v.key) ? { ...v, missing: true } : v));
   return json({ available: true, videos: marked.map(publicVideo) });
 }
 

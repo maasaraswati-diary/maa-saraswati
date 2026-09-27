@@ -80,13 +80,11 @@ async function call(path = '', { method = 'GET', body, authed = true } = {}) {
 /**
  * The films, for the public page. Never throws - see useVideoAds.
  *
- * `fresh` asks the server for the list of record rather than its fast copy. The
- * panel uses it after every change: the owner has just pressed a button, and
- * being shown a list that does not yet include what they just did is worse than
- * waiting a moment longer for the answer.
+ * There is no cached copy behind this any more. The server answers from the one
+ * list it keeps, so a film added a second ago is on the page a second later.
  */
-export async function fetchVideoList({ fresh = false } = {}) {
-  const data = await call(fresh ? '?fresh=1' : '', { authed: false });
+export async function fetchVideoList() {
+  const data = await call('', { authed: false });
   return { available: data.available !== false, videos: Array.isArray(data.videos) ? data.videos : [] };
 }
 

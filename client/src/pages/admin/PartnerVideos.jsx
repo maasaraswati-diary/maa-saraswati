@@ -37,10 +37,7 @@ export default function PartnerVideos() {
   const toast = useToast();
   const fileRef = useRef(null);
 
-  // Always the list of record, not the server's fast copy: this screen is the
-  // one place a change is made, and a list that has not caught up with the
-  // change would look like the change did not happen.
-  const list = useFetch(() => fetchVideoList({ fresh: true }), []);
+  const list = useFetch(() => fetchVideoList(), []);
   const videos = list.data?.videos || [];
   const storageOn = list.data?.available !== false;
 

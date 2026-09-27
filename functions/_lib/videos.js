@@ -21,8 +21,11 @@
  * The list of films is NOT kept here, and that was learned the hard way. It was,
  * and it lost films: KV reads are eventually consistent, so removing one film
  * and then removing another immediately afterwards could read the list as it was
- * before the first removal and put that film back on the page. The list went to
- * Firestore, which is strongly consistent and already holds the catalogue.
+ * before the first removal and put that film back on the page. It was also up to
+ * a minute behind at the edge even when nothing was lost, so the owner who added
+ * a film and went to look at it saw a page without it. The list went to
+ * Firestore, which is strongly consistent, already holds the catalogue, and is
+ * read straight through - there is no second copy anywhere.
  */
 
 /** Where the list of films is kept - a single field in one Firestore document. */
@@ -68,74 +71,32 @@ export const filmKey = (name) => `film:${name}`;
 /** The key a poster frame is stored under. */
 export const posterKey = (name) => `poster:${name}`;
 
-/** The key the read-through mirror of the list is kept under. */
-const MIRROR_KEY = 'list-mirror';
-
 /**
- * The list, read from the mirror and kept honest in the background.
+ * The list of films, read from Firestore.
  *
- * A read of Firestore failed once and blanked the owner's video page: the
- * function treated "could not read it" as "there is nothing there", and a
- * hiccup at Google emptied a page for everybody. An empty list and a failed
- * read are different answers and only one of them may be given.
+ * There was a copy of this kept in KV in front of Firestore, so that a visit to
+ * the video page would not spend a read. That was a bad trade and it was
+ * removed: the store's smallest possible staleness is a minute, so the owner who
+ * added a film and went to look at it was shown a page without it, and the
+ * figure it saved was nothing. A read of a document is a read, the daily
+ * allowance is fifty thousand, and the video page is not the busiest thing on
+ * this site by a long way. Correct and simple beats a minute of being wrong.
  *
- * So the list is mirrored in KV, which is a read away and answers every time,
- * and Firestore stays the truth it is written to. A visitor's read is answered
- * from the mirror and refreshes it in the background, so a stale mirror corrects
- * itself without anyone waiting for it, and no visit spends a Firestore read.
+ * Throws if the list cannot be read. It must: a caller that is told "there is
+ * nothing here" when the answer is "I could not look" will empty the page, and
+ * an owner watching that believes their films are gone.
  *
- * `fresh` skips the mirror and goes to the truth. The panel uses it: the owner
- * has just pressed a button, and being shown a list that does not yet include
- * what they just did is worse than a slower answer. It is also not worth
- * optimising - one person, a few seconds.
- *
- * Throws if the truth cannot be reached. It must: a caller that is told "there
- * is nothing here" when the answer is "I could not look" will empty the page,
- * and an owner watching that believes their films are gone.
+ * `fresh` is accepted and ignored. It asked for the truth rather than the copy;
+ * now that there is only one answer, everything is it.
  */
 export async function listFilms(env, ctx, { fresh = false } = {}) {
-  if (fresh) {
-    const truth = await firestoreList();
-    if (truth === null) {
-      throw new Error('The list of films could not be read just now. Please try again.');
-    }
-    if (ctx?.waitUntil) ctx.waitUntil(writeMirror(env, truth));
-    return truth;
-  }
-  let mirror = null;
-  try {
-    mirror = await env.VIDEOS.get(MIRROR_KEY, 'json');
-  } catch {
-    mirror = null;
-  }
-  if (Array.isArray(mirror)) {
-    const pending = firestoreList();
-    if (ctx?.waitUntil) ctx.waitUntil(refresh(env, pending));
-    return mirror.filter((v) => v && isSafeKey(v.key));
-  }
-  // No mirror yet, or it could not be read: go to the truth, and only say
-  // "nothing" if the truth actually says so.
-  const first = await firestoreList();
-  if (first === null) {
+  void ctx;
+  void fresh;
+  const truth = await firestoreList();
+  if (truth === null) {
     throw new Error('The list of films could not be read just now. Please try again.');
   }
-  if (ctx?.waitUntil) ctx.waitUntil(writeMirror(env, first));
-  return first;
-}
-
-/** Bring the mirror back in line with the truth. */
-async function refresh(env, pending) {
-  try {
-    const truth = await pending;
-    if (Array.isArray(truth)) await writeMirror(env, truth);
-  } catch {
-    // Nothing to do: the next read tries again.
-  }
-}
-
-/** Write the mirror. Failing to write it costs a slower read, nothing more. */
-export async function writeMirror(env, videos) {
-  await env.VIDEOS.put(MIRROR_KEY, JSON.stringify(videos)).catch(() => {});
+  return truth;
 }
 
 /**
@@ -167,19 +128,26 @@ export async function storedFilmNames(env) {
 const VERIFY_AFTER_MS = 5 * 60 * 1000;
 
 /**
- * Drop films from the list whose film is not there.
+ * The keys of films that are listed but are not in the store.
  *
  * The list is derived from the store, so the store is the truth. An entry whose
  * film has gone would draw a card that plays nothing, and that is the one
  * failure a customer notices and blames the shop for - worse than a film simply
  * not being on the page.
  *
- * Only films old enough to have settled are checked. In practice the ordering
- * already prevents a name without a film: a film is stored before it is listed,
- * and unlisted before it is removed, so this catches the leftovers of an earlier
- * mistake rather than waiting for a new one.
+ * Only films old enough to have settled are checked, because a KV listing is
+ * eventually consistent just as a read is. This was the cause of a warning
+ * appearing on a film that had been uploaded seconds earlier and was perfectly
+ * fine: the film was stored, but the listing had not caught up, so it read as
+ * absent. A film younger than the limit is taken on trust, in the panel and on
+ * the public page alike - one rule for both, because they were disagreeing and
+ * only one of them had the guard.
+ *
+ * In practice the ordering already prevents a name without a film: a film is
+ * stored before it is listed, and unlisted before it is removed. This catches the
+ * leftovers of an earlier mistake rather than waiting for a new one.
  */
-export async function onlyFilmsThatExist(env, videos) {
+export async function missingFilmKeys(env, videos) {
   const now = Date.now();
   // An entry with no usable date is left alone. It cannot be judged old enough
   // to check, and an entry too new to check is safer than one wrongly judged.
@@ -187,16 +155,22 @@ export async function onlyFilmsThatExist(env, videos) {
     const added = Date.parse(v.added);
     return Number.isFinite(added) && now - added > VERIFY_AFTER_MS;
   });
-  if (!settled.length) return videos;
+  if (!settled.length) return new Set();
   try {
     const have = await storedFilmNames(env);
-    const gone = new Set(settled.filter((v) => !have.has(v.key)).map((v) => v.key));
-    return gone.size ? videos.filter((v) => !gone.has(v.key)) : videos;
+    return new Set(settled.filter((v) => !have.has(v.key)).map((v) => v.key));
   } catch {
-    // If the store cannot be asked, the list stands. Showing a card that might
-    // not play is better than emptying the page over a transient failure.
-    return videos;
+    // If the store cannot be asked, nothing is called missing. Saying a film has
+    // gone when nobody has looked is worse than showing a card that might not
+    // play.
+    return new Set();
   }
+}
+
+/** The films that can actually be played, in order. */
+export async function onlyFilmsThatExist(env, videos) {
+  const gone = await missingFilmKeys(env, videos);
+  return gone.size ? videos.filter((v) => !gone.has(v.key)) : videos;
 }
 
 /** The list, from Firestore. Null means it could not be read - not that it is empty. */
@@ -241,10 +215,6 @@ export async function readIndex() {
  * change it. The Functions add nothing to that and take nothing away - which is
  * the whole reason the list is written from here rather than by the Admin SDK.
  *
- * The mirror is written afterwards, not instead. It is only a copy: a write that
- * reached Firestore and failed to reach the copy leaves the page showing the
- * previous list for a moment, which the next read corrects. The reverse - a copy
- * written and the truth not - would lose the change.
  */
 export async function writeIndex(env, videos, token) {
   const url =
@@ -263,7 +233,6 @@ export async function writeIndex(env, videos, token) {
     }
     throw new Error(said || `The list of films could not be saved (${res.status}).`);
   }
-  await writeMirror(env, videos);
 }
 
 /** The caller's sign-in token, taken from the request the endpoint was given. */

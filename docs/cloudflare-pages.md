@@ -115,7 +115,7 @@ So:
 | The film bytes | Workers KV | Free with no card. One value holds up to 25 MB, which is a whole film, so a film is stored whole and reading it back is one read. 100,000 reads a day. |
 | The poster frame | Workers KV | Same store, a few tens of kilobytes. |
 | The list of films | Firestore, one document | Strongly consistent, which matters more here than it does for a page of text. |
-| A fast copy of the list | Workers KV | So a visitor's visit is not waiting on a round trip to Google. |
+| The list of films | Firestore, one document | Strongly consistent, and read straight through. There is no cached copy in front of it - see below. |
 
 A namespace is free to create and costs nothing to keep:
 
@@ -160,7 +160,9 @@ remove is a film that stays for ever.
 | The public list, with its fallback | `client/src/hooks/useVideoAds.js` |
 | Taking a poster frame from a film | `client/src/lib/videoPoster.js` |
 
-In the store: `film:<name>`, `poster:<name>`, and `list-mirror`. In Firestore:
+There was a KV copy of the list in front of Firestore, so a visit would not spend a read. It is gone. The store's smallest possible staleness is a minute, so the owner who added a film and went to look at it was shown a page without it - and a read of one small document, against an allowance of fifty thousand a day, for a page that gets few visitors, was not worth trading a minute of being wrong for.
+
+In the store: `film:<name>` and `poster:<name>`. In Firestore:
 `shop/video-list`, which the catalogue skips by name - the same way it skips the
 About page, and for the same reason: `syncShopWithApproved` deletes anything in
 that collection which is not an approved product, and without the skip every visit
