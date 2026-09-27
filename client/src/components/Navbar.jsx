@@ -110,6 +110,19 @@ export default function Navbar() {
             </nav>
           )}
 
+          {/*
+            The panel's own menu goes here, in the bar, rather than further down
+            the page below the figures. It was there, and it was missed: the
+            owner's tools looked like a row of numbers with something optional
+            underneath, and the Videos tab that most people came for was the
+            easiest to walk straight past.
+
+            The dashboard owns the menu - the tabs, which one is open, how many
+            approvals and enquiries are waiting - so it draws it here through a
+            portal rather than the two halves having to agree on a shape.
+          */}
+          {isPanel && <div className="nav-panel-slot" id="panel-nav-slot" />}
+
           <div className="nav-actions">
             {isPanel ? (
               <Link to="/" className="btn btn-green btn-sm nav-cta">

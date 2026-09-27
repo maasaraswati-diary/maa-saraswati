@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import Icon from '../../components/Icons';
 import ProductImage from '../../components/ProductImage';
@@ -59,6 +60,28 @@ export default function PartnerDashboard() {
   const tabs = TABS.filter((t) => !t.ownerOnly || isOwner);
   const tab = tabs.some((t) => t.key === tabParam) ? tabParam : 'products';
   const setTab = (key) => setParams(key === 'products' ? {} : { tab: key });
+
+  /**
+   * Where the menu is drawn.
+   *
+   * The menu belongs in the bar at the top of the page, not below the figures,
+   * so it is drawn there. The bar is a different component that knows nothing
+   * about tabs, approvals or enquiries, so rather than teach it all of that -
+   * or lift the menu's state up out of here - it leaves an empty place and this
+   * fills it. One shape to keep in step instead of two.
+   *
+   * It is looked for after the fact because the bar and this screen are siblings:
+   * on the first render the place may not be in the document yet, and the bar
+   * can be replaced entirely when moving between screens.
+   */
+  const [barSlot, setBarSlot] = useState(null);
+  useEffect(() => {
+    const find = () => setBarSlot(document.getElementById('panel-nav-slot'));
+    find();
+    // The bar is re-rendered on every route change, which can replace the node
+    // this points at without the screen itself unmounting.
+    find();
+  }, [pathname]);
 
   const mine = useFetch(
     () => (isOwner ? fetchAllProducts() : fetchProductsByOwner(user.email)),
@@ -171,8 +194,38 @@ export default function PartnerDashboard() {
 
   const totalValue = list.reduce((s, p) => s + (Number(p.price) || 0), 0);
 
+  // The menu, built here rather than beside the tab state because it needs the
+  // counts, which are only known once the products and enquiries have arrived.
+  const menu = (
+    <div className="admin-tabs" role="tablist" aria-label="Panel sections">
+      {tabs.map((t) => {
+        const I = Icon[t.icon];
+        const waiting =
+          t.key === 'approvals'
+            ? pending.length
+            : t.key === 'enquiries'
+              ? enqList.filter((e) => e.status === 'new').length
+              : 0;
+        return (
+          <button
+            key={t.key}
+            type="button"
+            role="tab"
+            aria-selected={tab === t.key}
+            className={`admin-tab ${tab === t.key ? 'active' : ''}`}
+            onClick={() => setTab(t.key)}
+          >
+            <I size={16} /> <span>{t.label}</span>
+            {waiting > 0 && <span className="admin-badge">{waiting}</span>}
+          </button>
+        );
+      })}
+    </div>
+  );
+
   return (
     <section className="admin-sec">
+      {barSlot ? createPortal(menu, barSlot) : null}
       <div className="container">
         <div className="admin-head">
           <div>
@@ -220,29 +273,6 @@ export default function PartnerDashboard() {
                   <span className="stat-label">{c.label}</span>
                 </div>
               </div>
-            );
-          })}
-        </div>
-
-        <div className="admin-tabs">
-          {tabs.map((t) => {
-            const I = Icon[t.icon];
-            return (
-              <button
-                key={t.key}
-                className={`admin-tab ${tab === t.key ? 'active' : ''}`}
-                onClick={() => setTab(t.key)}
-              >
-                <I size={17} /> {t.label}
-                {t.key === 'approvals' && pending.length > 0 && (
-                  <span className="admin-badge">{pending.length}</span>
-                )}
-                {t.key === 'enquiries' && enqList.filter((e) => e.status === 'new').length > 0 && (
-                  <span className="admin-badge">
-                    {enqList.filter((e) => e.status === 'new').length}
-                  </span>
-                )}
-              </button>
             );
           })}
         </div>
