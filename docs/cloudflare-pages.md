@@ -58,7 +58,7 @@ npm run deploy:pages    # builds and uploads
 The address will be `maa-saraswati-diary.pages.dev` unless the project is given
 another name.
 
-## Adding a video without touching R2
+## Adding a video without opening a dashboard
 
 **`Add Video.bat` in the project root.** Double-click it, choose a file, type a
 title, press Enter twice. The film is compressed, given a poster frame, put on
@@ -93,80 +93,93 @@ appropriate quality, audio at voice level, the index moved to the front so a
 browser can start playing before the file has finished arriving. The shop's own
 films lose about half their size. The original is never touched.
 
-## Films: R2, and the one step that needs a card
+## Where the films are kept
 
-The videos page is built out of films in `client/src/videoAds.js` and the files
-in `client/public/videos`. They are served by Pages like everything else, which
-is fine, but it means every film a visitor presses play is downloaded out of
-the Pages allowance.
+Films uploaded from the panel do not go in Firestore and do not go in R2.
 
-**R2 is where uploaded films live.** The partner panel's Videos tab sends a
-film to a Cloudflare Function, which puts it in R2, and the video page lists
-what is there. R2's free tier holds 10 GB and — the reason for choosing it —
-does not charge for the data coming back out.
+**Not R2** because Cloudflare will not switch R2 on until a card is on the
+account, and a shop should not have to enter a card number to change its own
+website. R2 is still the better store - any size, reads cost nothing - and is
+worth switching to if a card is ever added. Nothing above the storage layer would
+change.
 
-Enabling it takes one visit to the Cloudflare dashboard, and it asks for a card
-even on the free tier. Nothing is charged while usage stays inside the free
-allowance, but the card has to be there, which is why this step was left for the
-owner to do rather than done from a machine that could not.
+**Not Firestore** because a document there is capped at one megabyte and a film
+is several. It is also the wrong tool for it: a video is not a row, and reading
+one out of a document store costs a read out of a daily allowance that the
+catalogue is already spending.
 
-1. Dashboard → **R2** → enable. A card is requested; that is expected. The
-   partner panel's Videos tab links straight to this page, so it does not have to
-   be found by hand.
-2. `npm run r2:enable`
+So:
 
-`r2:enable` is the whole of the rest, and it is one script because each step
-forgets itself otherwise: it creates the bucket, puts the binding into
-`wrangler.toml` — publishing a Function that names a bucket which does not exist
-is refused outright, so that cannot be left as something to remember — builds,
-publishes, and then checks the site reports that storage is on. Running it twice
-is harmless. If R2 has not been bought it stops at the first step and says so,
-rather than half-way through leaving a site that will not publish.
+| | Where | Why |
+| --- | --- | --- |
+| The film bytes | Workers KV | Free with no card. One value holds up to 25 MB, which is a whole film, so a film is stored whole and reading it back is one read. 100,000 reads a day. |
+| The poster frame | Workers KV | Same store, a few tens of kilobytes. |
+| The list of films | Firestore, one document | Strongly consistent, which matters more here than it does for a page of text. |
+| A fast copy of the list | Workers KV | So a visitor's visit is not waiting on a round trip to Google. |
 
-Until then the site is not broken and does not pretend otherwise: the functions
-notice the missing binding and say so, the public video page goes on serving the
-films built into the site, and the panel shows **Storage not switched on** with
-the upload button disabled.
+A namespace is free to create and costs nothing to keep:
 
-### Moving the existing four films across
+```sh
+npx wrangler kv namespace create maa-videos
+```
 
-Once R2 is on, the four films in `client/src/videoAds.js` should be uploaded
-through the panel and that file emptied to `[]`. The panel's list takes over as
-the one list of films; the built-in list is only ever a fallback for when the
-video service cannot be reached.
+### Three things that went wrong, and what they are for
 
-## Where the video pieces live
+**The list was in KV first, and it lost films.** KV reads are eventually
+consistent, so removing one film and removing another immediately afterwards
+could read the list as it was before the first removal, and put that film back
+on the page. The list is strongly consistent data, so it went to Firestore,
+which is read-your-writes.
+
+**"Could not read it" was answered as "there is nothing there".** A request to
+Firestore failed once and the video page came up empty - for the owner as well as
+for visitors. A read that cannot be made now throws rather than returning an
+empty list, because a caller told "nothing here" when the answer is "I could not
+look" will empty the page, and an owner watching that believes their films are
+gone. The same applies to the read that a change depends on: answered as empty, a
+change would have written back a list holding one film and deleted the rest.
+
+**A film that had been stored was hidden as missing.** The page checks each film
+against the store and offers only what it can serve, so a name whose file had
+gone could not draw a card that plays nothing. But the store's own listing is
+eventually consistent too, so for a minute or two after an upload the film was
+not in the listing and the upload looked as though it had failed. A film is only
+checked once it is old enough to have settled. The panel is also shown films the
+file has gone, marked as such, because a film the owner can neither see nor
+remove is a film that stays for ever.
+
+### Files
 
 | What | Where |
 | --- | --- |
 | `GET/POST/PUT/DELETE /api/videos` | `functions/api/videos.js` |
 | Who is allowed to call it | `functions/_lib/auth.js` |
-| Bucket layout, size limits, path safety | `functions/_lib/videos.js` |
-| Streaming films and posters | `functions/media/[[path]].js` |
+| The store, the list, size limits, path safety | `functions/_lib/videos.js` |
+| Serving films and posters, with Range | `functions/media/[[path]].js` |
 | The panel screen | `client/src/pages/admin/PartnerVideos.jsx` |
 | The public list, with its fallback | `client/src/hooks/useVideoAds.js` |
 | Taking a poster frame from a film | `client/src/lib/videoPoster.js` |
 
-In the bucket: `videos/<name>.mp4`, `posters/<name>.jpg`, and
-`videos/index.json` holding the titles, notes and order.
-
-Firestore was deliberately not used for any of this. A film is measured in
-megabytes and a Firestore document is capped at one, and a new collection would
-have meant editing and publishing security rules by hand in the Firebase
-console. The Functions check the owner's sign-in token on the server instead,
-which is the same protection without the console.
+In the store: `film:<name>`, `poster:<name>`, and `list-mirror`. In Firestore:
+`shop/video-list`, which the catalogue skips by name - the same way it skips the
+About page, and for the same reason: `syncShopWithApproved` deletes anything in
+that collection which is not an approved product, and without the skip every visit
+to the panel would empty the video page.
 
 ### Tests
 
 ```sh
-npx wrangler pages dev client/dist --port 8788   # in one terminal
 SITE_EMAIL=... SITE_PASSWORD=... node e2e/video-upload.mjs
 ```
 
-`wrangler pages dev` gives a real R2 bucket with no account involved, so the
-whole round trip — pick a file, take a poster frame, store it, list it, serve it
-with Range requests, play it, rename it, move it, remove it — is checked before
-anything is published. 46 checks.
+70 checks against the deployed site, with the real sign-in and the real store:
+pick a file, take a frame, store it, list it, serve it whole and in parts, seek
+to the end, play it, rename it, move it, walk every tab in the panel and check
+nothing was swept away, then remove it and find the files gone.
+
+It has to run against a real deployment. The list is in Firestore, which a local
+server reaches over the network, so a run against localhost would write the list
+for real while the films went into a local store the site cannot see.
 
 ## A domain, later
 

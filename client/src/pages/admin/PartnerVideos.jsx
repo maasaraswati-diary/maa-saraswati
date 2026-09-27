@@ -13,16 +13,6 @@ import {
 } from '../../store/videos';
 import { fileSize, makePosterFrame } from '../../lib/videoPoster';
 
-/**
- * The Cloudflare account the films will be stored in.
- *
- * R2 can only be bought in the dashboard, by hand, with a card - there is no way
- * to do it from a script. So rather than describing where to go, the panel
- * links straight to the page, which is the one place this can be done and the
- * only step in the whole thing that needs a person.
- */
-const CLOUDFLARE_ACCOUNT = '5fd337a931f515e3bfbcf864454dfce2';
-
 /** When a film went up, in a form worth reading. */
 function addedWhen(iso) {  if (!iso) return '';
   const d = new Date(iso);
@@ -33,11 +23,11 @@ function addedWhen(iso) {  if (!iso) return '';
 /**
  * The video page, as the owner sees it.
  *
- * Films are stored in Cloudflare R2 rather than in the database, for one plain
- * reason: a film is measured in megabytes and the database's documents are
- * capped at one. R2's free tier holds 10 GB and, unlike the hosting plan this
- * site left behind, it does not charge for the data coming back out - which is
- * what a film is: something every visitor who presses play downloads in full.
+ * Films are stored in Cloudflare KV rather than in the database, for one plain
+ * reason: a film is measured in megabytes and a database document is capped at
+ * one. KV holds a whole 25 MB film as a single entry, is free without a payment
+ * method - which R2 and Cloud Storage both are not - and reads are part of a
+ * daily allowance of 100,000, far more than a shop of this size will use.
  *
  * The poster frame is grabbed from the film in the browser as it is chosen, so
  * the picture on the page always belongs to the film above it and no separate
@@ -47,7 +37,10 @@ export default function PartnerVideos() {
   const toast = useToast();
   const fileRef = useRef(null);
 
-  const list = useFetch(() => fetchVideoList(), []);
+  // Always the list of record, not the server's fast copy: this screen is the
+  // one place a change is made, and a list that has not caught up with the
+  // change would look like the change did not happen.
+  const list = useFetch(() => fetchVideoList({ fresh: true }), []);
   const videos = list.data?.videos || [];
   const storageOn = list.data?.available !== false;
 
@@ -210,21 +203,12 @@ export default function PartnerVideos() {
         <div className="notice notice-warn">
           <Icon.Alert size={18} />
           <div>
-            <strong>Films cannot be uploaded yet.</strong> Cloudflare's R2 storage has to be
-            switched on in the Cloudflare dashboard first — it asks for a card, and nothing is
-            charged while usage stays inside the free allowance. The website is still showing the
-            films it was built with, so nothing is broken in the meantime.
+            <strong>Video storage is not reachable.</strong> The website is still showing the films
+            it was built with, so nothing is broken — but films cannot be uploaded until whoever
+            looks after the website sorts this out.
             <div className="notice-actions">
-              <a
-                className="btn btn-sm"
-                href={`https://dash.cloudflare.com/${CLOUDFLARE_ACCOUNT}/r2/overview`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                Open the R2 page <Icon.ArrowRight size={15} />
-              </a>
-              <button type="button" className="btn btn-ghost btn-sm" onClick={list.reload}>
-                <Icon.Refresh size={15} /> I have done it — check again
+              <button type="button" className="btn btn-sm" onClick={list.reload}>
+                <Icon.Refresh size={15} /> Try again
               </button>
             </div>
           </div>
@@ -251,7 +235,7 @@ export default function PartnerVideos() {
             ) : (
               <>
                 <strong>Choose a video from your computer</strong>
-                <span className="hint">MP4 or WebM, up to 25 MB</span>
+                <span className="hint">MP4 or WebM, up to 20 MB</span>
               </>
             )}
             <input
@@ -400,10 +384,21 @@ export default function PartnerVideos() {
                     <>
                       <strong className="vid-title">{v.title}</strong>
                       {v.note && <span className="vid-note">{v.note}</span>}
-                      <span className="hint">
-                        {fileSize(v.size)}
-                        {addedWhen(v.added) ? ` · added ${addedWhen(v.added)}` : ''}
-                      </span>
+                      {/* A film whose file has gone is listed but cannot play.
+                          Visitors never see it - the page only offers films it
+                          can actually serve - but it is shown here so it can be
+                          taken off the list rather than sitting there for ever. */}
+                      {v.missing ? (
+                        <span className="vid-missing">
+                          <Icon.Alert size={14} /> The file is missing, so this plays nothing.
+                          Remove it to tidy the page.
+                        </span>
+                      ) : (
+                        <span className="hint">
+                          {fileSize(v.size)}
+                          {addedWhen(v.added) ? ` · added ${addedWhen(v.added)}` : ''}
+                        </span>
+                      )}
                     </>
                   )}
                 </div>

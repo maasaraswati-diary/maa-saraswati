@@ -10,7 +10,7 @@
  * So every call that changes anything carries the sign-in token, and that token
  * is checked against Google's identity service here. The token cannot be forged
  * without the password, and the account it belongs to has to be on the owners
- * list. Everything else - the panel, Firestore's rules, the R2 binding - is
+ * list. Everything else - the panel, Firestore's rules, the KV binding - is
  * downstream of this check.
  */
 

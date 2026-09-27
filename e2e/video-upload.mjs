@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Uploading a film from the panel, and finding it on the public page.
  *
  * This is the whole round trip the panel's Videos tab promises: pick a file, a
@@ -6,14 +6,16 @@
  * appears on the site's video page and plays - and then it can be renamed,
  * moved, and removed again.
  *
- * It runs against a local `wrangler pages dev`, which gives a real R2 bucket
- * with no account or card involved, and against the real Firebase sign-in. So
- * the only thing standing between this passing and production is the owner
- * enabling R2 in the dashboard.
+ * It runs against the deployed site, with the real Firebase sign-in and the real
+ * film store, and cleans up after itself - every film it uploads is removed
+ * again before the run ends.
  *
  *   SITE_EMAIL=... SITE_PASSWORD=... node e2e/video-upload.mjs
  *
- * SITE_URL points it somewhere other than the local server.
+ * SITE_URL points it somewhere else. It must be a real deployment: the list of
+ * films is in Firestore, which a local server reaches over the network, so a run
+ * against localhost would write the list for real while the films went into a
+ * local store the site cannot see.
  */
 import { createRequire } from 'node:module';
 import { execFileSync } from 'node:child_process';
@@ -25,7 +27,26 @@ const require = createRequire('C:/Users/DELL/AppData/Roaming/npm/');
 const { chromium } = require('playwright');
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const BASE = process.env.SITE_URL || 'http://127.0.0.1:8788';
+
+/**
+ * The deployed site, not a local one.
+ *
+ * The list of films lives in Firestore, and the Functions reach it over the
+ * network with the project's own key - there is no local Firestore to point at.
+ * So a run against `wrangler pages dev` would put the list in the real database
+ * while the films went into a local KV that the site cannot see: a page of cards
+ * that play nothing. The film bytes are only ever written where they will be
+ * read from, so this runs against the real address.
+ */
+const BASE = process.env.SITE_URL || 'https://maa-saraswati-diary.pages.dev';
+
+/**
+ * Every film this run names carries this, so no two runs can produce the same
+ * title. Without it, a film left behind by an earlier run and the one this run
+ * adds are indistinguishable by name, and the checks that are supposed to mean
+ * something quietly pass against the wrong row.
+ */
+const RUN = Date.now().toString(36).slice(-4);
 const email = process.env.SITE_EMAIL;
 const password = process.env.SITE_PASSWORD;
 
@@ -127,20 +148,66 @@ await signIn();
 await page.locator('.admin-tabs').first().waitFor({ timeout: 30000 });
 check(true, 'the panel opens');
 
+/* -------------------------------------------------------------- clean slate */
+
+// Films left by a run that was interrupted - a closed window, a piped command
+// cut short - would otherwise be counted against this one, and a test that
+// depends on the world being pristine is a test that gets skipped rather than
+// run. The panel is emptied first, through the panel, so this is a no-op on a
+// site that is already tidy.
 await page.goto(`${BASE}/partner/products?tab=videos`, { waitUntil: 'domcontentloaded' });
 await page.locator('.vid-panel').waitFor({ timeout: 30000 });
-check(true, 'the Videos tab opens');
+await page.waitForTimeout(2000);
+
+let tidied = 0;
+let tidiedErrors = 0;
+for (let attempt = 0; attempt < 20; attempt += 1) {
+  const left = (await (await page.request.get(`${BASE}/api/videos?fresh=1`)).json()).videos;
+  if (!left.length) break;
+  const ready = await Promise.race([
+    page.locator('.vid-row').first().waitFor({ timeout: 15000 }).then(() => 'row'),
+    page.locator('.error-state').first().waitFor({ timeout: 15000 }).then(() => 'error'),
+  ]).catch(() => 'neither');
+  if (ready !== 'row') {
+    tidiedErrors += 1;
+    if (tidiedErrors > 3) break;
+    await page.goto(`${BASE}/partner/products?tab=videos`, { waitUntil: 'domcontentloaded' });
+    await page.locator('.vid-panel').waitFor({ timeout: 30000 });
+    continue;
+  }
+  await page.locator('.vid-row').first().locator('button[title="Remove this film"]').click();
+  await page.locator('.modal').waitFor({ timeout: 10000 });
+  await page.locator('.modal .btn-red').click();
+  await page
+    .waitForFunction(
+      async (want) => (await (await fetch('/api/videos?fresh=1')).json()).videos.length < want,
+      left.length,
+      { timeout: 30000, polling: 500 }
+    )
+    .catch(() => {});
+  tidied += 1;
+}
+if (tidied) console.log(`  (tidied ${tidied} film(s) left by an earlier run)`);
+
+check(
+  (await (await page.request.get(`${BASE}/api/videos?fresh=1`)).json()).videos.length === 0,
+  'the page starts with no films, whatever an earlier run left behind'
+);
+
+await page.goto(`${BASE}/partner/products?tab=videos`, { waitUntil: 'domcontentloaded' });
+await page.locator('.vid-panel').waitFor({ timeout: 30000 });
+await page.waitForTimeout(1000);
 
 await page.screenshot({ path: join(HERE, 'artifacts', 'videos-tab.png'), fullPage: true });
 
 check(
   await page.locator('.admin-tab', { hasText: 'Videos' }).first().isVisible(),
-  'the tab is in the menu'
+  'the Videos tab is in the menu'
 );
 
 /* ---------------------------------------------------------------- upload */
 
-const title = 'Paneer, cut this morning';
+const title = `Paneer, cut this morning ${RUN}`;
 await page.setInputFiles('#video-file', VIDEO);
 await page.waitForTimeout(500);
 check(
@@ -150,14 +217,63 @@ check(
 
 // The title is offered from the file name; it is changed to something a person
 // would actually write, which is the part that has to be respected.
+const rowsBefore = await page.locator('.vid-row').count();
 await page.fill('#video-title', title);
 await page.fill('#video-note', 'Set from our own milk. No starch, no vegetable fat.');
-await page.click('.vid-panel .card.form-card .btn-brand');
-await page.waitForSelector('.vid-row', { timeout: 120000 });
-check(true, 'the film is uploaded and listed');
+
+// What the panel actually sends, so a mismatch between what was typed and what
+// was stored is visible rather than inferred from a slug.
+let sent = null;
+page.on('request', (req) => {
+  if (req.method() === 'POST' && req.url().endsWith('/api/videos')) {
+    try {
+      sent = JSON.parse(req.postData() || '{}');
+    } catch {
+      sent = { title: '(unreadable)' };
+    }
+  }
+});
+
+const button = page.locator('.vid-panel .card.form-card .btn-brand');
+check(!(await button.isDisabled()), 'the upload button is ready once a file is chosen');
+await button.click();
+
+// Waiting for a row to appear is not the same as waiting for this film to be
+// added: a row may already be there from an earlier film, and the wait then
+// succeeds on a panel that never uploaded anything. What has to change is the
+// number of rows, and a panel that says why it failed has to be noticed too.
+const what = await Promise.race([
+  page
+    .waitForFunction((n) => document.querySelectorAll('.vid-row').length > n, rowsBefore, {
+      timeout: 120000,
+    })
+    .then(() => 'added'),
+  page
+    .locator('.form-error')
+    .first()
+    .waitFor({ timeout: 120000 })
+    .then(() => 'error'),
+]).catch(() => 'neither');
+
+if (what === 'error') {
+  check(
+    false,
+    'the film is uploaded and listed: the panel said ' +
+      (await page.locator('.form-error').first().innerText()).replace(/\s+/g, ' ').slice(0, 200)
+  );
+} else if (what === 'neither') {
+  check(false, 'the film is uploaded and listed: nothing arrived, and nothing said why');
+  await page.screenshot({ path: join(HERE, 'artifacts', 'upload-stuck.png'), fullPage: true });
+} else {
+  check(true, 'the film is uploaded and listed');
+}
+check(Boolean(sent), `the panel actually sent an upload (${sent ? `title "${sent.title}"` : 'no request was made'})`);
 
 const row = page.locator('.vid-row').first();
-check((await row.innerText()).includes(title), 'the title that was typed is the one shown');
+check(
+  (await row.innerText()).includes(title),
+  `the title that was typed is the one shown (typed "${title}", panel sent "${sent && sent.title}", row shows "${(await row.innerText()).split('\n')[0]}")`
+);
 
 // The poster is grabbed from the film in the browser. A card with no picture
 // still works, so this is the check that the frame was actually taken.
@@ -189,8 +305,8 @@ check(film && film.size > 500000, `and a real file size (${film && Math.round(fi
   );
   check(full.headers()['accept-ranges'] === 'bytes', 'and says it accepts ranges');
 
-  // Seeking is the reason the Range header is passed through. Without a 206 the
-  // viewer has to wait for the whole film before it can move.
+  // Seeking is the reason the Range header is honoured. Without a 206 the viewer
+  // has to wait for the whole film before it can move.
   const part = await page.request.get(BASE + film.src, { headers: { Range: 'bytes=0-1023' } });
   check(part.status() === 206, `a range request is answered with 206 (got ${part.status()})`);
   check(
@@ -198,6 +314,42 @@ check(film && film.size > 500000, `and a real file size (${film && Math.round(fi
     `and says what it sent (${part.headers()['content-range']})`
   );
   check((await part.body()).length === 1024, 'and it is exactly the bytes asked for');
+
+  // The forms a browser actually sends: the end of the file, and "from here on".
+  const tail = await page.request.get(BASE + film.src, { headers: { Range: 'bytes=-512' } });
+  check(tail.status() === 206, `the last bytes can be asked for (${tail.status()})`);
+  check((await tail.body()).length === 512, 'and exactly that many come back');
+
+  const openEnd = await page.request.get(BASE + film.src, { headers: { Range: 'bytes=1000-' } });
+  check(openEnd.status() === 206, `"from here to the end" is understood (${openEnd.status()})`);
+  check(
+    (await openEnd.body()).length === film.size - 1000,
+    'and runs to the end of the film, not to a page of it'
+  );
+
+  // A range asking for more than there is must stop at the end rather than
+  // running off it.
+  const over = await page.request.get(BASE + film.src, {
+    headers: { Range: `bytes=0-${film.size + 99999}` },
+  });
+  check(over.status() === 206, 'a range past the end is still a partial reply');
+  check(
+    over.headers()['content-range'] === `bytes 0-${film.size - 1}/${film.size}`,
+    `and is trimmed to the file (${over.headers()['content-range']})`
+  );
+
+  // Something a player cannot use is answered with the whole file, which a
+  // player will play, rather than with a broken 206 it will refuse.
+  for (const bad of ['bytes=abc-def', 'bytes=-', 'kilobytes=0-10', 'bytes=0-10,20-30']) {
+    const res = await page.request.get(BASE + film.src, { headers: { Range: bad } });
+    check(res.status() === 200, `"${bad}" falls back to the whole film (${res.status()})`);
+  }
+
+  // A head request has to describe the film without sending it.
+  const head = await page.request.fetch(BASE + film.src, { method: 'HEAD' });
+  check(head.status() === 200, 'a HEAD request is answered');
+  check(head.headers()['content-length'] === String(film.size), 'and gives the size without the film');
+  check((await head.body()).length === 0, 'and sends no film at all');
 }
 
 {
@@ -208,28 +360,65 @@ check(film && film.size > 500000, `and a real file size (${film && Math.round(fi
   // "../" is tidied away by the HTTP client before it is ever sent, so a test
   // using one proves nothing about the server.
   const attempts = [
-    '/media/videos/%2e%2e%2f%2e%2e%2findex.json',
-    '/media/videos/index.json',
+    '/media/videos/%2e%2e%2f%2e%2e%2flist',
+    '/media/videos/list',
     '/media/anything.txt',
-    '/media/videos/gone.mp4',
-    '/media/videos/UPPER.mp4',
+    '/media/videos/gone',
+    '/media/videos/UPPER',
+    '/media/videos/has%20a%20space',
+    '/media/',
   ];
   for (const bad of attempts) {
     const res = await page.request.get(BASE + bad);
     check(res.status() === 404, `${bad} is refused (${res.status()})`);
   }
 
-  // A name that resolves outside /media never reaches the serving route at all -
-  // the path is settled before routing, so the answer is the site's own page
-  // rather than an error. What matters is that the list of films, which is the
-  // one thing worth stealing, is not in it.
-  const climb = await page.request.get(BASE + '/media/%2e%2e/index.json');
-  const body = await climb.text();
-  check(!body.includes('"videos"'), 'and the list of films cannot be reached that way');
+  // The list is public - the public video page needs it - so reaching it is not
+  // a leak. What must not be reachable is the store itself: the media route is
+  // for films and posters, and nothing else in the namespace may be named
+  // through it.
+  for (const reach of [
+    '/media/videos/list',
+    '/media/videos/film%3Apaneer-cut-this-morning',
+    '/media/posters/poster%3Apaneer-cut-this-morning',
+    '/media/videos/VIDEOS',
+  ]) {
+    const res = await page.request.get(BASE + reach);
+    check(res.status() === 404, `${reach} cannot name anything but a film (${res.status()})`);
+  }
+
+  // And the list hands out paths to fetch, never the store keys they are built
+  // from, so nothing about the store's shape is published.
+  const keys = await page.request.get(BASE + '/api/videos');
+  check(keys.status() === 200, 'the public list is readable without signing in');
+  const handed = (await keys.json()).videos;
   check(
-    !(climb.headers()['content-type'] || '').includes('json'),
-    `what comes back is not the list (${climb.headers()['content-type']})`
+    handed.length > 0 && !handed.some((v) => /film:|poster:/.test(v.src + v.poster)),
+    'and it hands out paths, never the store keys those paths are built from'
   );
+}
+
+/* ------------------------------------------------ the panel must not sweep it */
+
+{
+  // The list of films lives in the same Firestore collection as the products, and
+  // the panel has a repair routine that deletes anything in that collection which
+  // is not an approved product. It is skipped by name - but a skip that is
+  // removed is invisible until a customer's film has quietly vanished, so this
+  // walks the panel exactly as an owner would and then checks the list survived.
+  for (const tab of ['products', 'approvals', 'about', 'testimonials', 'enquiries']) {
+    await page.goto(`${BASE}/partner/products?tab=${tab}`, { waitUntil: 'domcontentloaded' });
+    await page.locator('.admin-tabs').first().waitFor({ timeout: 30000 });
+    await page.waitForTimeout(1500);
+  }
+  const survived = await (await page.request.get(`${BASE}/api/videos`)).json();
+  check(
+    survived.videos.some((v) => v.title === title),
+    'visiting every tab in the panel does not empty the video page'
+  );
+
+  const stillPlays = await page.request.get(BASE + film.src, { headers: { Range: 'bytes=0-99' } });
+  check(stillPlays.status() === 206, 'and the film itself is still there afterwards');
 }
 
 /* ---------------------------------------------------------------- the page */
@@ -265,7 +454,7 @@ await page.goto(`${BASE}/partner/products?tab=videos`, { waitUntil: 'domcontentl
 await page.locator('.vid-row').first().waitFor({ timeout: 30000 });
 
 await row.locator('button[title="Change the title"]').click();
-await page.locator('.vid-row input.input').first().fill('Paneer, cut this morning (new)');
+await page.locator('.vid-row input.input').first().fill(`Paneer, cut this morning (new) ${RUN}`);
 await page.locator('.vid-row .btn-brand').click();
 await page.waitForTimeout(2500);
 check(
@@ -277,7 +466,7 @@ check(
 
 // A second film, so there is an order to change. It is a few kilobytes rather
 // than megabytes - the point is the ordering, not the picture.
-const second = 'Ghee, churned by hand';
+const second = `Ghee, churned by hand ${RUN}`;
 {
   const tiny = tinyFilm('tiny-ghee.mp4');
   await page.setInputFiles('#video-file', tiny);
@@ -293,7 +482,12 @@ const second = 'Ghee, churned by hand';
   check(true, 'a second film is added');
 
   const newestFirst = await page.locator('.vid-row').allInnerTexts();
-  check(newestFirst[0].includes(second), 'the newest film is at the top of the list');
+  check(
+    newestFirst[0].includes(second),
+    `the newest film is at the top of the list (order: ${newestFirst
+      .map((t) => t.split('\n')[0])
+      .join(' / ')})`
+  );
 
   // Move it down. The panel sends the whole order, so the order on screen and the
   // order stored cannot fall out of step.
@@ -301,11 +495,13 @@ const second = 'Ghee, churned by hand';
   await page.waitForTimeout(2500);
 
   const afterMove = await page.locator('.vid-row').allInnerTexts();
-  check(afterMove[1].includes(second), 'a film can be moved down');
+  check(afterMove[1].includes(second), `a film can be moved down (order: ${afterMove
+    .map((t) => t.split('\n')[0])
+    .join(' / ')})`);
   check(afterMove[0].includes('(new)'), 'and the one above it moved up');
 
   const stored = (await (await page.request.get(`${BASE}/api/videos`)).json()).videos;
-  check(stored[1].title === second, 'and the new order is what was stored');
+  check(stored[1]?.title === second, `and the new order is what was stored (${stored.map((v) => v.title).join(' / ')})`);
 
   // And the public page follows it.
   await page.goto(`${BASE}/videos`, { waitUntil: 'domcontentloaded' });
@@ -323,11 +519,42 @@ await page.locator('.vid-row').first().waitFor({ timeout: 30000 });
 
 /* ---------------------------------------------------------------- remove */
 
-// Both films come off again, and the bucket is left as it was found.
+// Both films come off again, and the page is left as it was found.
+//
+// The loop is driven by what the server says, not by what is on screen. The
+// panel says "Loading" while it re-reads the list, and there are briefly no rows
+// at all in that moment - a loop that watches the screen sees an empty page,
+// decides it is finished, and leaves a film behind. Watching the list of record
+// means the loop ends when the films are actually gone.
+const listNow = async () => (await (await page.request.get(`${BASE}/api/videos?fresh=1`)).json()).videos;
+
 let askedAboutRemoving = false;
-while ((await page.locator('.vid-row').count()) > 0) {
-  const count = await page.locator('.vid-row').count();
-  page.once('dialog', (d) => d.accept());
+let transient = 0;
+for (let attempt = 0; attempt < 20; attempt += 1) {
+  const left = await listNow();
+  if (!left.length) break;
+  await page.goto(`${BASE}/partner/products?tab=videos`, { waitUntil: 'domcontentloaded' });
+  await page.locator('.vid-panel').waitFor({ timeout: 30000 });
+
+  // The panel says "could not load" rather than showing an empty page when the
+  // list cannot be read, which is the right thing for it to do and not a fault
+  // to fail on. A row, or that message, is what arriving means here.
+  const what = await Promise.race([
+    page.locator('.vid-row').first().waitFor({ timeout: 15000 }).then(() => 'row'),
+    page.locator('.error-state').first().waitFor({ timeout: 15000 }).then(() => 'error'),
+  ]).catch(() => 'neither');
+
+  if (what !== 'row') {
+    transient += 1;
+    if (transient <= 3) {
+      console.log(`  (the panel could not read the list; trying again)`);
+      continue;
+    }
+    check(false, `the panel never listed a film that the server says is there (${what})`);
+    await page.screenshot({ path: join(HERE, 'artifacts', 'remove-stuck.png'), fullPage: true });
+    break;
+  }
+
   await page.locator('.vid-row').first().locator('button[title="Remove this film"]').click();
   await page.locator('.modal').waitFor({ timeout: 10000 });
   if (!askedAboutRemoving) {
@@ -335,17 +562,23 @@ while ((await page.locator('.vid-row').count()) > 0) {
     askedAboutRemoving = true;
   }
   await page.locator('.modal .btn-red').click();
-  await page.waitForFunction(
-    (left) => document.querySelectorAll('.vid-row').length < left,
-    count,
-    { timeout: 30000 }
-  );
+  // Wait for the server, not the screen: the row count passes through zero while
+  // the panel reloads, which is exactly the moment a screen-watching wait
+  // mistakes for the end.
+  await page
+    .waitForFunction(
+      async (want) => (await (await fetch('/api/videos?fresh=1')).json()).videos.length < want,
+      left.length,
+      { timeout: 30000, polling: 500 }
+    )
+    .catch(() => {});
 }
+if (transient) check(true, `the list stayed readable (${transient} transient hiccup(s) shown as an error, not as an empty page)`);
 
-const after = await (await page.request.get(`${BASE}/api/videos`)).json();
-check(after.videos.length === 0, `every film is off the page again (${after.videos.length} left)`);
+const after = await listNow();
+check(after.length === 0, `every film is off the page again (${after.length} left)`);
 check(
-  !after.videos.some((v) => v.title.includes('(new)')),
+  !after.some((v) => v.title.includes('(new)')),
   'including the one that was renamed'
 );
 

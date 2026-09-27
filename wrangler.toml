@@ -13,22 +13,18 @@ name = "maa-saraswati"
 compatibility_date = "2024-11-01"
 pages_build_output_dir = "client/dist"
 
-# The bucket holding the films, their poster frames and the small JSON file that
-# lists them. Bound as env.VIDEOS inside the functions.
+# R2 was the first choice and is the better one: it holds any size of file and
+# its reads cost nothing. It cannot be used here, because Cloudflare will not
+# switch R2 on until a card is on the account, and a card is not something this
+# project should ask for. So the films go in Workers KV, which is free without
+# one.
 #
-# This is commented out until R2 is switched on in the Cloudflare dashboard.
-# Publishing a Function that names a bucket which does not exist is refused
-# outright, so the site cannot be deployed at all while the line is live. The
-# functions notice the missing binding and say so in plain words: the video page
-# goes on serving the films built into the site, and the panel shows "Storage not
-# switched on" instead of offering an upload button that would quietly fail.
+# KV holds 1 GB, allows 100,000 reads a day, and takes a single value of up to
+# 25 MB - which is a whole film, not a piece of one. A film is therefore stored
+# whole, and reading one back costs one read.
 #
-# To turn it on, once R2 is enabled and the bucket exists:
-#
-#   npx wrangler r2 bucket create maa-videos
-#
-# then uncomment the two blocks below and run `npm run deploy:pages`.
-#
-# [[r2_buckets]]
-# binding = "VIDEOS"
-# bucket_name = "maa-videos"
+# KV namespaces are created from the command line and cost nothing:
+#   npx wrangler kv namespace create maa-videos
+[[kv_namespaces]]
+binding = "VIDEOS"
+id = "02c088b3f5f34f8289f68e372358fad1"

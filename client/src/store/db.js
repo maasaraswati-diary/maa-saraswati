@@ -53,6 +53,20 @@ const PAGE_DOC_ID = 'page-about';
 const PAGE_KIND = 'page';
 const isPageDoc = (id, data) => id === PAGE_DOC_ID || data?.kind === PAGE_KIND;
 
+/**
+ * The list of films on the video page, kept here for the same reason the About
+ * text is: the collection already allows exactly what is needed - open to read,
+ * owner-only to write - and Firestore is strongly consistent, which matters more
+ * here than it does for a page of text. The film bytes are far too big for a
+ * document and live in Workers KV; this is only the list of titles and notes.
+ *
+ * KV was tried for the list as well and it lost films: KV reads are eventually
+ * consistent, so removing one film and immediately removing another could read
+ * the list as it was before the first removal and put that film back.
+ */
+const VIDEO_LIST_DOC_ID = 'video-list';
+const isVideoListDoc = (id) => id === VIDEO_LIST_DOC_ID;
+
 const clean = (v) => (v === undefined ? null : v);
 
 /** Shapes a Firestore product document into the shape the UI expects. */
@@ -112,10 +126,10 @@ function slugify(value) {
 export async function fetchApprovedProducts() {
   // Plain collection read - no `where` clause - so the security rules can allow
   // it outright. The collection only ever contains approved products, plus the
-  // About page's text, which is filtered out here.
+  // About page's text and the list of films, which are filtered out here.
   const snap = await getDocs(collection(db, LIVE));
   return snap.docs
-    .filter((d) => !isPageDoc(d.id, d.data()))
+    .filter((d) => !isPageDoc(d.id, d.data()) && !isVideoListDoc(d.id))
     .map(toProduct)
     .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
 }
@@ -358,13 +372,15 @@ export async function syncShopWithApproved(products) {
 
   // A product that is no longer approved must not stay on sale. The About page
   // document is not a product and is not owned by the product list at all, so it
-  // has to be skipped here or opening the panel would quietly wipe the page.
+  // has to be skipped here or opening the panel would quietly wipe the page. The
+  // same is true of the list of films: skip it, or every visit to the panel
+  // would empty the video page.
   const live = await getDocs(collection(db, LIVE));
   const approvedIds = new Set(
     products.filter((p) => p.status === 'approved').map((p) => p.id)
   );
   for (const d of live.docs) {
-    if (isPageDoc(d.id, d.data())) continue;
+    if (isPageDoc(d.id, d.data()) || isVideoListDoc(d.id)) continue;
     if (!approvedIds.has(d.id)) {
       await deleteDoc(d.ref);
       removed.push(d.id);

@@ -2,11 +2,11 @@
  * Talking to the video endpoints.
  *
  * These live on Cloudflare, next to the site itself (/api/videos), and store
- * films in R2. Firestore was not used for this deliberately: its security rules
- * would have had to name a video collection, and changing those rules means
- * opening the Firebase console and publishing by hand. The endpoint checks the
- * owner's sign-in token on the server instead, which is the same protection
- * without the console.
+ * films in Workers KV. Firestore was not used for this deliberately: a document
+ * there is capped at one megabyte, a film is not, and a new collection would
+ * have meant editing and publishing security rules by hand in the Firebase
+ * console. The endpoint checks the owner's sign-in token on the server instead,
+ * which is the same protection without the console.
  *
  * Nothing here throws a raw network error at the panel. Every failure arrives
  * as a sentence worth showing the owner, because "Failed to fetch" tells the
@@ -17,8 +17,12 @@ import { auth } from '../firebase';
 /** Where the films are listed and changed. Same address as the page. */
 const ENDPOINT = '/api/videos';
 
-/** The most the endpoint will take, matching the limit it enforces. */
-export const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
+/**
+ * The most the endpoint will take. The store's own limit is 25 MB; the panel
+ * sends the file base64-encoded, so the ceiling here is a little lower and the
+ * message the owner sees is in these terms.
+ */
+export const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
 
 const ACCEPTED = ['video/mp4', 'video/webm'];
 
@@ -73,9 +77,16 @@ async function call(path = '', { method = 'GET', body, authed = true } = {}) {
   return data;
 }
 
-/** The films, for the public page. Never throws - see useVideoAds. */
-export async function fetchVideoList() {
-  const data = await call('', { authed: false });
+/**
+ * The films, for the public page. Never throws - see useVideoAds.
+ *
+ * `fresh` asks the server for the list of record rather than its fast copy. The
+ * panel uses it after every change: the owner has just pressed a button, and
+ * being shown a list that does not yet include what they just did is worse than
+ * waiting a moment longer for the answer.
+ */
+export async function fetchVideoList({ fresh = false } = {}) {
+  const data = await call(fresh ? '?fresh=1' : '', { authed: false });
   return { available: data.available !== false, videos: Array.isArray(data.videos) ? data.videos : [] };
 }
 
@@ -125,7 +136,7 @@ export function checkFile(file) {
     return 'Please choose an MP4 or WebM file.';
   }
   if (file.size > MAX_UPLOAD_BYTES) {
-    return `That film is ${(file.size / 1048576).toFixed(1)} MB. The limit is 25 MB.`;
+    return `That film is ${(file.size / 1048576).toFixed(1)} MB. The limit is 20 MB.`;
   }
   return null;
 }

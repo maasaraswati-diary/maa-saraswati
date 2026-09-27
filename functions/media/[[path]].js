@@ -1,20 +1,51 @@
 /**
- * The films themselves, /media/videos/<name>.mp4 and /media/posters/<name>.jpg.
+ * The films themselves, /media/videos/<name> and /media/posters/<name>.
  *
- * Serving them through here rather than straight off the bucket keeps everything
- * on one address: no cross-origin rules, no extra domain to set up or pay for,
- * and the pictures and the films cannot drift apart. It also means a poster that
- * has been deleted stops being served at once.
+ * Serving them through here rather than straight off the store keeps everything
+ * on one address: no cross-origin rules, no extra domain to set up, and the
+ * pictures and the films cannot drift apart. It also means a poster that has been
+ * deleted stops being served at once.
  *
  * A film has to be able to start playing before it has finished arriving, or
- * seeking forward is impossible - so the Range header is passed straight through
- * to the bucket and a 206 is handed back. Without it a viewer has to wait for
- * the whole file before the first frame appears.
+ * seeking forward is impossible - so the Range header is honoured with a 206 and
+ * a Content-Range. Without it a viewer waits for the whole file before the first
+ * frame appears.
  */
-import { bucketAvailable, isSafeKey } from '../_lib/videos.js';
+import { filmKey, isSafeKey, posterKey, storageAvailable } from '../_lib/videos.js';
 
-/** Only these two folders, and only these endings, are ever served. */
-const SERVEABLE = /^(videos|posters)\/([a-z0-9][a-z0-9-]{0,59})\.(mp4|webm|jpg|png|webp|avif)$/;
+/** Only these two folders, and only these names, are ever served. */
+const SERVEABLE = /^(videos|posters)\/([a-z0-9][a-z0-9-]{0,59})$/;
+
+/**
+ * Work out which bytes a Range header is asking for.
+ *
+ * Only the single-range form is honoured - "bytes=0-1023" and "bytes=1024-" -
+ * which is all a browser sends. A multi-range request, or one asking for a
+ * suffix it does not need, is answered with the whole file and a 200: a player
+ * given a 200 plays it, where a player given a malformed 206 stops.
+ */
+export function parseRange(header, size) {
+  if (!header) return null;
+  const m = /^bytes=(\d*)-(\d*)$/.exec(String(header).trim());
+  if (!m) return null;
+  const [, rawStart, rawEnd] = m;
+  if (rawStart === '' && rawEnd === '') return null;
+
+  let start;
+  let end;
+  if (rawStart === '') {
+    // The last N bytes.
+    const length = Number(rawEnd);
+    if (!length) return null;
+    start = Math.max(0, size - length);
+    end = size - 1;
+  } else {
+    start = Number(rawStart);
+    end = rawEnd === '' ? size - 1 : Math.min(Number(rawEnd), size - 1);
+  }
+  if (!Number.isFinite(start) || !Number.isFinite(end) || start > end || start >= size) return null;
+  return { start, end };
+}
 
 async function handle({ request, env, params }) {
   if (request.method !== 'GET' && request.method !== 'HEAD') {
@@ -24,8 +55,8 @@ async function handle({ request, env, params }) {
     });
   }
 
-  if (!bucketAvailable(env)) {
-    return new Response('Video storage is not switched on yet.', {
+  if (!storageAvailable(env)) {
+    return new Response('Video storage is not available.', {
       status: 503,
       headers: { 'Content-Type': 'text/plain; charset=utf-8' },
     });
@@ -41,57 +72,45 @@ async function handle({ request, env, params }) {
       headers: { 'Content-Type': 'text/plain; charset=utf-8' },
     });
   }
+  const [, folder, name] = match;
   // The pattern already limits the name, but the check that actually guards the
-  // bucket is the one that says what a name may be.
-  if (!isSafeKey(match[2])) {
+  // store is the one that says what a name may be.
+  if (!isSafeKey(name)) {
     return new Response('Not found', { status: 404 });
   }
 
-  // Passing the request's own headers lets the bucket read the Range header -
-  // but only when there is one. Handed a range option it has been asked for, a
-  // request that asked for nothing must get the whole file back with a 200, not
-  // a 206 covering all of it: some browsers treat that as a partial reply to a
-  // request they never made part of, and an image arrives marked incomplete.
-  const rangeHeader = request.headers.get('Range');
-  let object = null;
-  if (rangeHeader) {
-    try {
-      object = await env.VIDEOS.get(path, { range: request.headers });
-    } catch {
-      object = null;
-    }
-  }
-  if (!object) object = await env.VIDEOS.get(path);
-
-  if (!object) {
+  const key = folder === 'videos' ? filmKey(name) : posterKey(name);
+  const stored = await env.VIDEOS.getWithMetadata(key, 'arrayBuffer');
+  if (!stored || !stored.value) {
     return new Response('Not found', {
       status: 404,
       headers: { 'Content-Type': 'text/plain; charset=utf-8' },
     });
   }
 
-  const headers = new Headers();
-  // The content type and cache lifetime were recorded when the file was stored,
-  // so they travel with it rather than being guessed at here.
-  object.writeHttpMetadata(headers);
-  headers.set('Accept-Ranges', 'bytes');
-  headers.set('Cache-Control', 'public, max-age=31536000, immutable');
-  if (object.httpEtag) headers.set('ETag', object.httpEtag);
+  const bytes = stored.value;
+  const size = bytes.byteLength;
+  // What the film was stored as, not what its name suggests.
+  const contentType = stored.metadata?.contentType || 'application/octet-stream';
+
+  const headers = new Headers({
+    'Content-Type': contentType,
+    'Cache-Control': 'public, max-age=31536000, immutable',
+    'Accept-Ranges': 'bytes',
+  });
 
   // A partial reply is only ever the right answer to a request that asked for
-  // part of the file, so the status follows the request rather than whatever
-  // the bucket happens to report. Handed a range option, some R2
-  // implementations fill in a range covering the whole file even when none was
-  // asked for, and a 206 saying "here is everything" is not something a
-  // browser asked for.
-  const partial = Boolean(rangeHeader) && Boolean(object.range);
-  if (partial) {
-    const { offset, length } = object.range;
-    headers.set('Content-Range', `bytes ${offset}-${offset + length - 1}/${object.size}`);
-    return new Response(request.method === 'HEAD' ? null : object.body, { status: 206, headers });
+  // part of the file, so the status follows the request.
+  const range = parseRange(request.headers.get('Range'), size);
+  if (range) {
+    const slice = bytes.slice(range.start, range.end + 1);
+    headers.set('Content-Range', `bytes ${range.start}-${range.end}/${size}`);
+    headers.set('Content-Length', String(slice.byteLength));
+    return new Response(request.method === 'HEAD' ? null : slice, { status: 206, headers });
   }
 
-  return new Response(request.method === 'HEAD' ? null : object.body, { status: 200, headers });
+  headers.set('Content-Length', String(size));
+  return new Response(request.method === 'HEAD' ? null : bytes, { status: 200, headers });
 }
 
 export const onRequestGet = handle;
