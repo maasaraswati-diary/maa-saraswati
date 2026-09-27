@@ -26,3 +26,6 @@ gha_*.json
 # Runtime data written by the local JSON store
 server/data/*.tmp
 *.out
+
+# Playwright failure screenshots
+e2e/artifacts/

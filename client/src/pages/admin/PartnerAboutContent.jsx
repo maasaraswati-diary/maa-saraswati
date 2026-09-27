@@ -3,9 +3,9 @@ import Icon from '../../components/Icons';
 import ProductImage from '../../components/ProductImage';
 import { useToast } from '../../components/Toast';
 import { useAuth } from '../../context/AuthContext';
-import { fetchAboutContent, saveAboutContent } from '../../store/db';
+import { fetchAboutContent, saveAboutContent, saveProductImage } from '../../store/db';
 import { optimiseImage, prettyBytes } from '../../lib/imageOptimiser';
-import { DEFAULT_ABOUT, VALUE_ICONS } from '../../aboutContent';
+import { DEFAULT_ABOUT, VALUE_ICONS, withAboutDefaults } from '../../aboutContent';
 
 const lines = (text) =>
   String(text || '')
@@ -48,12 +48,19 @@ function ImageField({ label, value, onChange, onBusy, shape = 'wide' }) {
       onChange(ref);
       setMsg('');
     } catch (err) {
-      setMsg('');
-      throw err;
-    } finally {
-      setBusy(false);
+      // Swallowed here, the owner sees a spinner stop and a slot that never
+      // changes, with nothing said. A missing import once made this whole
+      // handler fail silently on all five slots, so the reason is now shown in
+      // the slot and raised, rather than vanishing into the console.
+      setMsg(`Upload failed: ${err?.message || err}`);
+      // eslint-disable-next-line no-console
+      console.error('[about] image upload failed:', err);
       onBusy?.(false);
+      setBusy(false);
+      return;
     }
+    setBusy(false);
+    onBusy?.(false);
   };
 
   return (
@@ -212,13 +219,11 @@ export default function PartnerAboutContent() {
       .then((saved) => {
         if (cancelled) return;
         if (saved) {
-          // withAboutDefaults is applied on the public side; here the shape is
-          // already known, but a half-saved document still has to fill in.
-          const next = { ...deepCopy(DEFAULT_ABOUT), ...saved };
-          const paras = Array.isArray(saved?.story?.paragraphs)
-            ? saved.story.paragraphs
-            : DEFAULT_ABOUT.story.paragraphs;
-          next.story.paragraphsText = paras.join('\n\n');
+          // withAboutDefaults rather than a raw spread: the stored document also
+          // carries bookkeeping fields (kind, updatedAt) that have no business
+          // in a form that gets written straight back out.
+          const next = deepCopy(withAboutDefaults(saved));
+          next.story.paragraphsText = next.story.paragraphs.join('\n\n');
           setForm(next);
           setLoaded(true);
         }
