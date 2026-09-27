@@ -360,8 +360,8 @@ export default function TestimonialsPanel() {
           <div>
             <strong>{list.length} reviews — slider on</strong>
             <p>
-              3 se zyada reviews hone par home page par slider aa jata hai,
-              taaki ek saath sab dikhne na lagay.
+              Once there are more than three reviews, the home page shows them
+              as a slider so they do not all appear at once.
             </p>
           </div>
         </div>

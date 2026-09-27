@@ -165,9 +165,9 @@ export default function PartnerDashboard() {
             </p>
           </div>
           <div className="admin-head-actions">
-            <Link to="/" className="btn btn-ghost btn-sm">
-              <Icon.Globe size={16} /> View Website
-            </Link>
+            {/* "View Website" lives in the header bar, which is on every panel
+                screen including the sign-in one. Having a second copy here put
+                two identical buttons in the same view. */}
             <button className="btn btn-ghost btn-sm" onClick={logout}>
               <Icon.LogOut size={16} /> Sign Out
             </button>

@@ -19,6 +19,14 @@ export default function Navbar() {
   const { pathname, hash } = useLocation();
   useScrollLock(open);
 
+  // The partner panel is a private workspace with its own menu inside the
+  // dashboard, so the public navigation is left out of it entirely. Leaving the
+  // customer's menu sitting above the owner's tools invited people to wander out
+  // of the panel by accident, and every one of those links goes somewhere the
+  // signed-in owner has no business being. "View Website" is the one deliberate
+  // way back to the public site.
+  const isPanel = pathname.startsWith('/partner');
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
     onScroll();
@@ -36,28 +44,33 @@ export default function Navbar() {
 
   return (
     <>
-      {/* Announcement strip */}
-      <div className="topbar">
-        <div className="container topbar-in">
-          <a className="topbar-item topbar-link" href={SITE.emailHref}>
-            <Icon.Mail size={15} /> {SITE.email}
-          </a>
-          <span className="topbar-sep" />
-          <span className="topbar-item">
-            <Icon.Snow size={15} /> Cold chain, farm to doorstep
-          </span>
-          <span className="topbar-sep" />
-          <a className="topbar-item topbar-link" href={SITE.phoneHref}>
-            <Icon.Phone size={15} /> {SITE.phone}
-          </a>
+      {/* Announcement strip - part of the public site's chrome, so the panel
+          does without it. */}
+      {!isPanel && (
+        <div className="topbar">
+          <div className="container topbar-in">
+            <a className="topbar-item topbar-link" href={SITE.emailHref}>
+              <Icon.Mail size={15} /> {SITE.email}
+            </a>
+            <span className="topbar-sep" />
+            <span className="topbar-item">
+              <Icon.Snow size={15} /> Cold chain, farm to doorstep
+            </span>
+            <span className="topbar-sep" />
+            <a className="topbar-item topbar-link" href={SITE.phoneHref}>
+              <Icon.Phone size={15} /> {SITE.phone}
+            </a>
+          </div>
         </div>
-      </div>
+      )}
 
       <header className={`nav ${scrolled ? 'nav-stuck' : ''}`}>
         <div className="container nav-in">
           {/* No aria-label here on purpose: the logo text already reads as the link
-          name, and overriding it hides the words a screen reader would say. */}
-      <Link to="/" className="brand">
+          name, and overriding it hides the words a screen reader would say. In the
+          panel the logo goes to the dashboard, not off to the public site - the
+          button beside it is the way out. */}
+      <Link to={isPanel ? '/partner/products' : '/'} className="brand">
             <Logo size={44} />
             <span className="brand-text">
               <span className="brand-name">MAA SARASWATI</span>
@@ -65,53 +78,65 @@ export default function Navbar() {
             </span>
           </Link>
 
-          <nav className="nav-links" aria-label="Main navigation">
-            {LINKS.map((l) => {
-              // A hash link shares its path with another entry, so it needs the
-              // hash checked too - otherwise Reviews and Home would light up
-              // together.
-              const linkHash = l.to.includes('#') ? l.to.split('#')[1] : '';
-              // A hash link shares its path with another entry, so it needs the
-              // hash checked too - otherwise Reviews and Home would light up
-              // together. While a section is open, plain links step aside.
-              const isActive = linkHash
-                ? pathname === '/' && hash.replace('#', '') === linkHash
-                : hash
-                  ? false
-                  : undefined;
-              return (
-                <NavLink
-                  key={l.to}
-                  to={l.to}
-                  end={l.end}
-                  className={({ isActive: byPath }) =>
-                    `nav-link ${(isActive ?? byPath) ? 'active' : ''}`
-                  }
-                >
-                  {l.label}
-                </NavLink>
-              );
-            })}
-          </nav>
+          {!isPanel && (
+            <nav className="nav-links" aria-label="Main navigation">
+              {LINKS.map((l) => {
+                // A hash link shares its path with another entry, so it needs the
+                // hash checked too - otherwise Reviews and Home would light up
+                // together.
+                const linkHash = l.to.includes('#') ? l.to.split('#')[1] : '';
+                // A hash link shares its path with another entry, so it needs the
+                // hash checked too - otherwise Reviews and Home would light up
+                // together. While a section is open, plain links step aside.
+                const isActive = linkHash
+                  ? pathname === '/' && hash.replace('#', '') === linkHash
+                  : hash
+                    ? false
+                    : undefined;
+                return (
+                  <NavLink
+                    key={l.to}
+                    to={l.to}
+                    end={l.end}
+                    className={({ isActive: byPath }) =>
+                      `nav-link ${(isActive ?? byPath) ? 'active' : ''}`
+                    }
+                  >
+                    {l.label}
+                  </NavLink>
+                );
+              })}
+            </nav>
+          )}
 
           <div className="nav-actions">
-            <Link to="/products" className="btn btn-red btn-sm nav-cta">
-              <Icon.Tag size={17} /> Shop Now
-            </Link>
-            <button
-              className="nav-burger"
-              onClick={() => setOpen((v) => !v)}
-              aria-label={open ? 'Close menu' : 'Open menu'}
-              aria-expanded={open}
-            >
-              <Icon.Menu size={24} />
-            </button>
+            {isPanel ? (
+              <Link to="/" className="btn btn-green btn-sm nav-cta">
+                <Icon.Globe size={17} /> View Website
+              </Link>
+            ) : (
+              <Link to="/products" className="btn btn-red btn-sm nav-cta">
+                <Icon.Tag size={17} /> Shop Now
+              </Link>
+            )}
+            {!isPanel && (
+              <button
+                className="nav-burger"
+                onClick={() => setOpen((v) => !v)}
+                aria-label={open ? 'Close menu' : 'Open menu'}
+                aria-expanded={open}
+              >
+                <Icon.Menu size={24} />
+              </button>
+            )}
           </div>
         </div>
         <div className="nav-progress" aria-hidden="true" />
       </header>
 
-      {/* Mobile drawer */}
+      {/* Mobile drawer. Only the public site has one: every link in here leads
+          away from the panel, and the panel has its own tabs. */}
+      {!isPanel && (
       <div
         className={`drawer ${open ? 'open' : ''}`}
         role="dialog"
@@ -179,6 +204,7 @@ export default function Navbar() {
           </div>
         </div>
       </div>
+      )}
     </>
   );
 }

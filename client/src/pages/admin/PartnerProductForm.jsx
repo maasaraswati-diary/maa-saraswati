@@ -243,8 +243,8 @@ export default function PartnerProductForm() {
           <div>
             <strong>The shop owner approves it after you save.</strong>
             <p>
-              The product does not go live on the website straight away. Customers see it only after it is approved,
-              customers ko dikhega.
+              The product does not go live on the website straight away.
+              Customers see it only after it is approved.
             </p>
           </div>
         </div>
@@ -458,13 +458,13 @@ export default function PartnerProductForm() {
             </div>
             <div className="form-row">
               <div className="field">
-                <label className="label" htmlFor="highlights">Highlights (ek per line)</label>
+                <label className="label" htmlFor="highlights">Highlights (one per line)</label>
                 <textarea id="highlights" className="textarea" style={{ minHeight: 100 }}
                   value={texts.highlights} onChange={setText('highlights')}
                   placeholder={'100% Pure Milk\nFrom healthy cows\nQuality you trust'} />
               </div>
               <div className="field">
-                <label className="label" htmlFor="usage">Best used in (ek per line)</label>
+                <label className="label" htmlFor="usage">Best used in (one per line)</label>
                 <textarea id="usage" className="textarea" style={{ minHeight: 100 }}
                   value={texts.usage} onChange={setText('usage')}
                   placeholder={'Tea and coffee\nCurd and paneer at home'} />
