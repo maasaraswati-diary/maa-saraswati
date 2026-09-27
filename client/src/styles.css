@@ -4782,3 +4782,41 @@
 .link-btn:hover {
   text-decoration-thickness: 2px;
 }
+
+/* Shown when a save is refused because the Firestore rule is not published. */
+.about-blocked {
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.about-blocked p {
+  margin: 6px 0 0;
+}
+
+/* Scoped under .about-blocked on purpose. A global reset styles any ol[class]
+   as list-style: none with no padding, and `ol[class]` outranks a bare class, so
+   a rule written as `.about-steps` silently loses. The numbers are the point
+   here - they are what makes this a sequence of steps rather than four loose
+   lines - so the marker has to survive. */
+.about-blocked .about-steps {
+  margin: 10px 0 0;
+  padding-left: 22px;
+  list-style: decimal;
+  font-size: 0.89rem;
+  line-height: 1.7;
+}
+
+.about-steps li {
+  margin-bottom: 2px;
+}
+
+.about-blocked a {
+  color: inherit;
+  font-weight: 700;
+}
+
+.about-blocked .rules-snippet {
+  flex: 1;
+  min-width: 260px;
+  margin: 0;
+}

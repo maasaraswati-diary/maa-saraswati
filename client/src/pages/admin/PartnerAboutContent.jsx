@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Icon from '../../components/Icons';
 import ProductImage from '../../components/ProductImage';
 import { useToast } from '../../components/Toast';
@@ -17,6 +17,12 @@ const deepCopy = (v) => JSON.parse(JSON.stringify(v));
 
 /** Remembers that the one-time rule has been dealt with, or waved away. */
 const SETUP_DISMISSED = 'ms-about-setup-dismissed';
+
+/** The exact rule to publish, kept in one place so both places quote it. */
+const PAGE_CONTENT_RULE = `match /pageContent/{id} {
+  allow read: if true;
+  allow write: if owner();
+}`;
 
 /**
  * One picture slot: pick a file, see what is there, or put the built-in photo
@@ -196,7 +202,15 @@ const Text = ({ label, value, onChange, textarea, rows, hint, placeholder }) => 
 export default function PartnerAboutContent() {
   const toast = useToast();
   const { user } = useAuth();
-  const [form, setForm] = useState(() => deepCopy(DEFAULT_ABOUT));
+  // The paragraphs are edited in one textarea but stored as a list, so the text
+  // is seeded from the list. Doing it here rather than at render time matters:
+  // the list is an array, and running an array through lines() would join it
+  // with commas.
+  const [form, setForm] = useState(() => {
+    const seed = deepCopy(DEFAULT_ABOUT);
+    seed.story.paragraphsText = seed.story.paragraphs.join('\n\n');
+    return seed;
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -214,6 +228,32 @@ export default function PartnerAboutContent() {
     }
   );
   const [showRule, setShowRule] = useState(false);
+  // Set when a save is refused. The fix is a one-off in the Firebase console,
+  // and it is the only thing standing between the owner and working content, so
+  // it gets said plainly and in full rather than as a reference to a note that
+  // may have been dismissed.
+  const [blocked, setBlocked] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const blockedRef = useRef(null);
+
+  // Runs after the panel is actually in the DOM. An animation frame from the
+  // click handler would fire before React had rendered it, and the scroll would
+  // find nothing to scroll to.
+  useEffect(() => {
+    if (!blocked) return;
+    blockedRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [blocked]);
+
+  const copyRule = async () => {
+    try {
+      await navigator.clipboard.writeText(PAGE_CONTENT_RULE);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      setCopied(false);
+      toast.error('Could not copy automatically — select the text and copy it.');
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -223,7 +263,12 @@ export default function PartnerAboutContent() {
         if (saved) {
           // withAboutDefaults is applied on the public side; here the shape is
           // already known, but a half-saved document still has to fill in.
-          setForm({ ...deepCopy(DEFAULT_ABOUT), ...saved });
+          const next = { ...deepCopy(DEFAULT_ABOUT), ...saved };
+          const paras = Array.isArray(saved?.story?.paragraphs)
+            ? saved.story.paragraphs
+            : DEFAULT_ABOUT.story.paragraphs;
+          next.story.paragraphsText = paras.join('\n\n');
+          setForm(next);
           setLoaded(true);
         }
       })
@@ -269,18 +314,20 @@ export default function PartnerAboutContent() {
       await saveAboutContent(payload, user);
       toast.success('About page updated — it is live on the website now.');
       setLoaded(true);
+      setBlocked(false);
     } catch (err) {
       // A missing rule reads as a bare "permission denied", which tells the
-      // owner nothing about what to do. This is the one case where the About
-      // text is written and still not saving, so it is worth saying plainly.
+      // owner nothing about what to do. The banner at the top can be dismissed,
+      // so the instructions are repeated here where the failure happened rather
+      // than pointed at somewhere else on the page.
       const denied =
         /permission/i.test(err?.code || '') || /permission/i.test(err?.message || '');
-      toast.error(
-        denied
-          ? 'The site is not allowed to save this yet. The owner needs to publish ' +
-            'the new Firestore rules once — see the note at the top of this tab.'
-          : err?.message || 'Could not save.'
-      );
+      if (denied) {
+        setBlocked(true);
+        toast.error('Could not save — one step is still needed at the top of this tab.');
+      } else {
+        toast.error(err?.message || 'Could not save.');
+      }
     } finally {
       setSaving(false);
     }
@@ -306,6 +353,51 @@ export default function PartnerAboutContent() {
 
   return (
     <form onSubmit={save}>
+      {blocked && (
+        <div className="notice notice-warn about-blocked" ref={blockedRef}>
+          <Icon.Alert size={18} />
+          <div>
+            <strong>Your changes are not saved yet</strong>
+            <p>
+              Nothing is wrong with what you have typed. The site is simply not
+              allowed to store it yet, because one Firestore rule has not been
+              published. It takes about a minute, and only ever once.
+            </p>
+            <ol className="about-steps">
+              <li>
+                Open{' '}
+                <a
+                  href="https://console.firebase.google.com/project/maa-saraswati-diary/firestore/databases/(default)/rules"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Firebase Console → Firestore → Rules
+                </a>{' '}
+                and sign in.
+              </li>
+              <li>Copy the four lines below.</li>
+              <li>
+                Paste them <em>above</em> the closing{' '}
+                <code>{'match /{document=**}'}</code> line.
+              </li>
+              <li>Press Publish, then come back and press Save again.</li>
+            </ol>
+            <div className="img-upload-row" style={{ marginTop: 10 }}>
+              <button
+                type="button"
+                className="btn btn-brand btn-sm"
+                onClick={copyRule}
+              >
+                <Icon.Check size={15} /> {copied ? 'Copied' : 'Copy the rule'}
+              </button>
+              <pre className="rules-snippet" style={{ margin: 0 }}>
+                {PAGE_CONTENT_RULE}
+              </pre>
+            </div>
+          </div>
+        </div>
+      )}
+
       {loaded && (
         <div className="notice notice-info" style={{ marginBottom: 18 }}>
           <Icon.Info size={18} />
@@ -416,7 +508,7 @@ export default function PartnerAboutContent() {
         <Text
           label="Paragraphs"
           textarea
-          value={form.story.paragraphsText ?? lines(form.story.paragraphs).join('\n\n')}
+          value={form.story.paragraphsText || ''}
           onChange={set('story', 'paragraphsText')}
           hint="Leave a blank line between paragraphs."
           rows={8}
@@ -564,7 +656,7 @@ export default function PartnerAboutContent() {
         <Text
           label="Checklist — one per line"
           textarea
-          value={lines(form.facility.points).join('\n')}
+          value={(form.facility.points || []).join('\n')}
           onChange={(v) => setList('facility', 'points')(lines(v))}
           rows={4}
         />
@@ -580,7 +672,13 @@ export default function PartnerAboutContent() {
           disabled={saving || uploading}
         >
           <Icon.Check size={17} />
-          {saving ? 'Saving…' : uploading ? 'Waiting for the photo…' : 'Save and publish'}
+          {saving
+            ? 'Saving…'
+            : blocked
+              ? 'Try saving again'
+              : uploading
+                ? 'Waiting for the photo…'
+                : 'Save and publish'}
         </button>
         <button type="button" className="btn btn-ghost" onClick={restore} disabled={saving}>
           <Icon.Refresh size={16} /> Restore the original text
