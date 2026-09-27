@@ -5353,9 +5353,21 @@
 
    The owner's menu is drawn into the bar by the dashboard rather than sitting in
    the flow of the page, so it has to carry its own spacing and its own rules
-   about being too wide. Six tabs will not fit beside a logo on a phone, and the
-   answer is to let them slide sideways rather than to drop the ones that do not
-   fit - a tab the owner cannot see is a tab they will say is missing. */
+   about being too wide.
+
+   Wide: a row of tabs beside the logo.
+
+   Narrow: folded away behind one button that says which screen you are on, and
+   opening downwards over the page. A row that slid sideways was tried first and
+   is the worst of both - half a tab showing, nothing to suggest there are more,
+   and the one you wanted possibly off the edge. Six tabs will not fit across a
+   phone whatever you do with them, so they go behind something. */
+
+.admin-menu {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
 
 .nav-panel-slot {
   flex: 1;
@@ -5419,26 +5431,46 @@
   color: var(--brand);
 }
 
-@media (max-width: 900px) {
-  .nav-panel-slot {
-    justify-content: flex-start;
-  }
-
-  .nav-panel-slot .admin-tab {
-    padding: 8px 11px;
-    font-size: 0.82rem;
-  }
+/* The button that stands in for the row on a narrow screen. It is not drawn at
+   all on a wide one, where there is room for the tabs themselves. */
+.admin-menu-toggle {
+  display: none;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-full);
+  background: var(--white);
+  color: var(--ink);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
 }
 
-/* On a phone the tab labels take more room than the icons do, and the icons are
-   enough once someone is in the panel and knows what they are. */
-/* On a phone the menu stops competing for room in the bar. Six tabs do not
-   fit beside a logo and a button, and the button lost: squeezed to a green blob
-   with no wording left on it, which is a way out of the panel that nobody can
-   read. So below this width the bar keeps its own line and the menu takes a row
-   of its own underneath, the width it needs. */
+.admin-menu-toggle svg {
+  flex: none;
+}
+
+.admin-menu-current {
+  flex: 1;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-menu-caret {
+  transition: transform var(--t-fast);
+}
+
+.admin-menu.open .admin-menu-caret {
+  transform: rotate(180deg);
+}
 
 @media (max-width: 980px) {
+  /* The bar keeps its own line; the logo gives up its words before the button
+     does, and the button before the logo. */
   .nav-in:has(.nav-panel-slot) {
     height: auto;
     padding-top: 10px;
@@ -5453,23 +5485,56 @@
     justify-content: flex-start;
   }
 
-  .nav-panel-slot .admin-tabs {
-    width: 100%;
+  .admin-menu-toggle {
+    display: flex;
   }
 
-  .nav-panel-slot .admin-tab {
-    padding: 9px 13px;
-    font-size: 0.84rem;
+  .nav-panel-slot .admin-tabs {
+    display: none;
+  }
+
+  /* Hangs from the bar, which is sticky, so it stays put while the page behind
+     it scrolls. Positioned against the bar rather than the button, so it is the
+     full width of the screen and not the width of one control.
+
+     The place the menu is drawn into is the bar's own slot, which is this
+     element's *parent* - so the rule reads from the menu outwards, not from the
+     slot inwards. The other way round matches nothing at all, and the menu never
+     opens. */
+  .nav-panel-slot .admin-menu.open .admin-tabs {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 60;
+    margin: 0;
+    padding: 8px;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 0 0 var(--r-md) var(--r-md);
+    box-shadow: var(--sh-lg);
+    overflow: visible;
+  }
+
+  .nav-panel-slot .admin-menu.open .admin-tab {
+    justify-content: flex-start;
+    padding: 12px 14px;
+    border-radius: var(--r-sm);
+    font-size: 0.92rem;
   }
 }
 
 /* The way out of the panel is never allowed to lose itself, at any width.
 
-   It was reduced to a green blob on a phone and then, once the menu moved
-   onto its own row, to nothing at all - an element with its wording still on
-   it and no box to put it in. The way out of the panel has to be the one
-   thing in the bar that cannot be squeezed, so it is told so outright, and
-   the brand beside it is the thing that gives way instead. */
+   It was reduced to a green blob on a phone and then, once the menu moved onto
+   its own row, to nothing at all - an element with its wording still on it and
+   no box to put it in. The way out of the panel has to be the one thing in the
+   bar that cannot be squeezed, so it is told so outright, and the brand beside
+   it is the thing that gives way instead. */
 .nav-cta {
   white-space: nowrap;
   flex: 0 0 auto;
@@ -5481,10 +5546,10 @@
 
 /* Shrinkable, but not greedy.
 
-   Given flex-grow it took the whole of the bar's line and left nothing at
-   all for the button beside it - the way out of the panel wrapped onto a
-   line of its own and vanished. It gives way instead, and the words go first
-   on a small screen, before the logo and before the button. */
+   Given flex-grow it took the whole of the bar's line and left nothing at all
+   for the button beside it - the way out of the panel wrapped onto a line of its
+   own and vanished. It gives way instead, and the words go first on a small
+   screen, before the logo and before the button. */
 .brand {
   min-width: 0;
   flex: 0 1 auto;
@@ -5493,6 +5558,10 @@
 @media (max-width: 620px) {
   .nav-in:has(.nav-panel-slot) .brand-text {
     display: none;
+  }
+
+  .nav-in:has(.nav-panel-slot) .nav-cta {
+    display: inline-flex;
   }
 }
 
@@ -5510,9 +5579,6 @@
   flex: 0 0 auto;
 }
 
-/* On a phone the sign-out button was stretched across the whole page by the
-   heading above it, which made a small act look like the main thing on the
-   screen. It is a control, not a call to action. */
 @media (max-width: 620px) {
   .admin-head {
     flex-direction: column;
@@ -5524,8 +5590,6 @@
     justify-content: flex-start;
   }
 
-  /* It was being stretched to the full width of the page, which turned a small
-     act into the biggest thing on the screen. */
   .admin-head-actions .btn {
     width: auto;
   }

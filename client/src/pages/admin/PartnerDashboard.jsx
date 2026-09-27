@@ -196,30 +196,56 @@ export default function PartnerDashboard() {
 
   // The menu, built here rather than beside the tab state because it needs the
   // counts, which are only known once the products and enquiries have arrived.
+  //
+  // On a wide screen it is a row of tabs in the bar. On a phone six tabs do not
+  // fit, and a row that slides sideways is the worst of both: half a tab is
+  // visible, there is nothing to suggest there are more, and the one you want may
+  // be off the edge. So below that width it folds away behind one button that
+  // says where you are, and opens downwards over the page.
+  const [menuOpen, setMenuOpen] = useState(false);
+  const openLabel = tabs.find((t) => t.key === tab)?.label || 'Menu';
+
   const menu = (
-    <div className="admin-tabs" role="tablist" aria-label="Panel sections">
-      {tabs.map((t) => {
-        const I = Icon[t.icon];
-        const waiting =
-          t.key === 'approvals'
-            ? pending.length
-            : t.key === 'enquiries'
-              ? enqList.filter((e) => e.status === 'new').length
-              : 0;
-        return (
-          <button
-            key={t.key}
-            type="button"
-            role="tab"
-            aria-selected={tab === t.key}
-            className={`admin-tab ${tab === t.key ? 'active' : ''}`}
-            onClick={() => setTab(t.key)}
-          >
-            <I size={16} /> <span>{t.label}</span>
-            {waiting > 0 && <span className="admin-badge">{waiting}</span>}
-          </button>
-        );
-      })}
+    <div className={`admin-menu ${menuOpen ? 'open' : ''}`}>
+      <button
+        type="button"
+        className="admin-menu-toggle"
+        onClick={() => setMenuOpen((v) => !v)}
+        aria-expanded={menuOpen}
+        aria-label={menuOpen ? 'Close the panel menu' : 'Open the panel menu'}
+      >
+        <Icon.Menu size={18} />
+        <span className="admin-menu-current">{openLabel}</span>
+        <Icon.ChevronDown size={16} className="admin-menu-caret" />
+      </button>
+
+      <div className="admin-tabs" role="tablist" aria-label="Panel sections">
+        {tabs.map((t) => {
+          const I = Icon[t.icon];
+          const waiting =
+            t.key === 'approvals'
+              ? pending.length
+              : t.key === 'enquiries'
+                ? enqList.filter((e) => e.status === 'new').length
+                : 0;
+          return (
+            <button
+              key={t.key}
+              type="button"
+              role="tab"
+              aria-selected={tab === t.key}
+              className={`admin-tab ${tab === t.key ? 'active' : ''}`}
+              onClick={() => {
+                setTab(t.key);
+                setMenuOpen(false);
+              }}
+            >
+              <I size={16} /> <span>{t.label}</span>
+              {waiting > 0 && <span className="admin-badge">{waiting}</span>}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 
