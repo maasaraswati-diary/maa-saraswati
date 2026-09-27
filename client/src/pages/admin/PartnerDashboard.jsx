@@ -4,6 +4,7 @@ import Icon from '../../components/Icons';
 import ProductImage from '../../components/ProductImage';
 import TestimonialsPanel from './PartnerTestimonials';
 import PartnerAboutContent from './PartnerAboutContent';
+import PartnerVideos from './PartnerVideos';
 import { useToast } from '../../components/Toast';
 import { useAuth } from '../../context/AuthContext';
 import { useFetch, usePageMeta } from '../../hooks';
@@ -26,6 +27,7 @@ const TABS = [
   { key: 'approvals', label: 'Approvals', icon: 'Check', ownerOnly: true },
   { key: 'testimonials', label: 'Reviews', icon: 'Sparkle', ownerOnly: true },
   { key: 'about', label: 'About Page', icon: 'Star', ownerOnly: true },
+  { key: 'videos', label: 'Videos', icon: 'Play', ownerOnly: true },
   { key: 'enquiries', label: 'Enquiries', icon: 'Inbox', ownerOnly: true },
 ];
 
@@ -176,7 +178,14 @@ export default function PartnerDashboard() {
           <div>
             <span className="eyebrow">Partner Panel</span>
             <h1 className="h2">
-              {isOwner ? 'All Products' : 'My Products'}
+              {/* The heading has to follow the tab. It used to be a fixed "All
+                  Products", so opening Reviews or the About editor showed a
+                  heading naming the one screen you were not looking at. */}
+              {tab === 'products'
+                ? isOwner
+                  ? 'All Products'
+                  : 'My Products'
+                : tabs.find((t) => t.key === tab)?.label || 'Partner Panel'}
             </h1>
             <p className="muted" style={{ marginTop: 6 }}>
               Signed in as <strong>{user?.email}</strong>
@@ -480,6 +489,12 @@ export default function PartnerDashboard() {
         {tab === 'about' && isOwner && (
           <div className="admin-pane">
             <PartnerAboutContent />
+          </div>
+        )}
+
+        {tab === 'videos' && isOwner && (
+          <div className="admin-pane">
+            <PartnerVideos />
           </div>
         )}
 

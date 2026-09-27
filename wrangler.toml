@@ -1,0 +1,34 @@
+# Cloudflare Pages + Cloudflare R2
+#
+# The site's files are served by Pages (free, unlimited bandwidth). The films
+# themselves live in R2, which is also free for this size of shop: 10 GB of
+# storage and, importantly, no charge for the data coming back out - which was
+# the whole reason for moving off Firebase Hosting's 360 MB a day.
+#
+# R2 has to be switched on in the Cloudflare dashboard once (it asks for a card
+# even on the free tier, but nothing is charged while you stay inside it). After
+# that, `npx wrangler r2 bucket create maa-videos` makes the bucket this file
+# points at.
+name = "maa-saraswati"
+compatibility_date = "2024-11-01"
+pages_build_output_dir = "client/dist"
+
+# The bucket holding the films, their poster frames and the small JSON file that
+# lists them. Bound as env.VIDEOS inside the functions.
+#
+# This is commented out until R2 is switched on in the Cloudflare dashboard.
+# Publishing a Function that names a bucket which does not exist is refused
+# outright, so the site cannot be deployed at all while the line is live. The
+# functions notice the missing binding and say so in plain words: the video page
+# goes on serving the films built into the site, and the panel shows "Storage not
+# switched on" instead of offering an upload button that would quietly fail.
+#
+# To turn it on, once R2 is enabled and the bucket exists:
+#
+#   npx wrangler r2 bucket create maa-videos
+#
+# then uncomment the two blocks below and run `npm run deploy:pages`.
+#
+# [[r2_buckets]]
+# binding = "VIDEOS"
+# bucket_name = "maa-videos"

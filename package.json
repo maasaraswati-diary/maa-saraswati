@@ -18,7 +18,10 @@
     "logs": "firebase functions:log",
     "deploy:pages": "npm run build && wrangler pages deploy client/dist --project-name maa-saraswati-diary --branch main",
     "deploy:pages:check": "npm run build && wrangler pages deploy client/dist --project-name maa-saraswati-diary --branch main --dry-run",
-    "pages:login": "wrangler login"
+    "pages:login": "wrangler login",
+    "pages:dev": "wrangler pages dev client/dist --port 8788",
+    "test:e2e": "node e2e/panel-smoke.mjs && node e2e/gallery-preview.mjs && node e2e/video-upload.mjs",
+    "test:videos": "node e2e/video-upload.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.0.1",

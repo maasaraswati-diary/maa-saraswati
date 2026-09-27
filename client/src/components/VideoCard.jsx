@@ -56,7 +56,7 @@ export default function VideoCard({ ad, index }) {
 
 
   return (
-    <article className={`vcard reveal reveal-d${(index % 3) + 1}`}>
+    <article id={ad.slug} className={`vcard reveal reveal-d${(index % 3) + 1}`}>
       <div className="vcard-frame" ref={frameRef}>
         {playing ? (
           onYouTube ? (
@@ -97,16 +97,28 @@ export default function VideoCard({ ad, index }) {
         ) : (
           <button
             type="button"
-            className="vcard-poster"
+            className={`vcard-poster ${ad.poster ? '' : 'vcard-poster-blank'}`}
             onClick={start}
             aria-label={`Play the video: ${ad.title}`}
           >
-            <Picture
-              src={ad.poster}
-              alt=""
-              loading="lazy"
-              sizes="(max-width: 900px) 92vw, 30vw"
-            />
+            {ad.poster ? (
+              <Picture
+                src={ad.poster}
+                alt=""
+                // A poster uploaded from the panel is stored in the one format
+                // the browser produced, so the avif and webp sources are not
+                // offered - there would be nothing behind them.
+                single={ad.poster.startsWith('/media/')}
+                loading="lazy"
+                sizes="(max-width: 900px) 92vw, 30vw"
+              />
+            ) : (
+              // No poster: the frame keeps its own colour rather than showing a
+              // broken picture, and the play button still sits in the middle.
+              <span className="vcard-blank-mark" aria-hidden="true">
+                MAA SARASWATI
+              </span>
+            )}
             <span className="vcard-play" aria-hidden="true">
               <Icon.Play size={26} />
             </span>

@@ -29,3 +29,7 @@ server/data/*.tmp
 
 # Playwright failure screenshots
 e2e/artifacts/
+
+# Wrangler's local state for `wrangler pages dev` - it holds a local copy of the
+# R2 bucket, and films landing in it must never be committed.
+.wrangler/

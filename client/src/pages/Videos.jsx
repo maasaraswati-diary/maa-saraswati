@@ -4,7 +4,7 @@ import VideoCard from '../components/VideoCard';
 import Picture from '../components/Picture';
 import { PageHeader } from '../components/Feedback';
 import { usePageMeta } from '../hooks';
-import { VIDEO_ADS } from '../videoAds';
+import { useVideoAds } from '../hooks/useVideoAds';
 import { SITE } from '../site';
 
 /**
@@ -21,6 +21,8 @@ export default function Videos() {
       'Short films of Maa Saraswati - how our ghee is churned, how the paneer is set, and how the milk gets to your door in Gurdaspur.',
   });
 
+  const { ads } = useVideoAds();
+
   return (
     <>
       <PageHeader
@@ -36,11 +38,15 @@ export default function Videos() {
 
       <section className="section">
         <div className="container">
-          <div className="grid grid-2 videos-grid">
-            {VIDEO_ADS.map((ad, i) => (
-              <VideoCard key={ad.slug} ad={ad} index={i} />
-            ))}
-          </div>
+          {ads.length ? (
+            <div className="grid grid-2 videos-grid">
+              {ads.map((ad, i) => (
+                <VideoCard key={ad.slug} ad={ad} index={i} />
+              ))}
+            </div>
+          ) : (
+            <p className="muted">Our films are being put together — please come back soon.</p>
+          )}
         </div>
       </section>
 

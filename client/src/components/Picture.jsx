@@ -22,9 +22,14 @@ export default function Picture({
   width,
   height,
   sizes,
+  single = false,
   ...rest
 }) {
-  if (!src || !PHOTO.test(src)) {
+  // `single` is for a picture that only exists in one format - a frame captured
+  // from a film the owner uploaded, say. Offering avif and webp for those would
+  // ask the browser for files that were never written, and every miss is a
+  // wasted request on the way to the one that does exist.
+  if (!src || single || !PHOTO.test(src)) {
     return (
       <img
         src={src}
