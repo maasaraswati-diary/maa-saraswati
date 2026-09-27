@@ -5373,7 +5373,10 @@
   flex: 1;
   min-width: 0;
   display: flex;
-  justify-content: center;
+  /* Menu on the left, the way back to the site on the right, at every width.
+     Centring the menu between the logo and the button left it neither beside
+     the thing it follows nor beside the thing that leads out of the panel. */
+  justify-content: flex-start;
 }
 
 .nav-panel-slot .admin-tabs {
@@ -5580,14 +5583,14 @@
     font-size: 1.05rem;
   }
 
-  /* The way back to the site and the menu share a line, each taking half. */
-  .nav-actions {
+  /* The menu on the left, the way back to the site on the right. */
+  .nav-panel-slot {
     order: 1;
     flex: 1 1 0%;
     min-width: 0;
   }
 
-  .nav-panel-slot {
+  .nav-actions {
     order: 2;
     flex: 1 1 0%;
     min-width: 0;
