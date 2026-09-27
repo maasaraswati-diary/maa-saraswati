@@ -58,6 +58,41 @@ npm run deploy:pages    # builds and uploads
 The address will be `maa-saraswati-diary.pages.dev` unless the project is given
 another name.
 
+## Adding a video without touching R2
+
+**`Add Video.bat` in the project root.** Double-click it, choose a file, type a
+title, press Enter twice. The film is compressed, given a poster frame, put on
+the video page and published. That is the whole tool.
+
+Nothing about it needs an account, a card, a dashboard or a login, which is the
+point: the R2 route below is the better one once it is available, but it is
+gated on a card being entered, and a shop should not be unable to change its own
+website until that happens.
+
+```
+Add Video.bat                          # ask, then publish
+node client/scripts/add-video.mjs      # the same, from a terminal
+node client/scripts/add-video.mjs --list
+node client/scripts/add-video.mjs --remove milk
+```
+
+Flags, for running it without asking anything: `--file`, `--title`, `--note`,
+`--remove <slug>`, `--list`, `--yes`.
+
+Two things it will not do quietly:
+
+- It asks before publishing, and says plainly when it has only changed the files
+  on this computer.
+- If the partner panel is in charge of the video page - which it will be once R2
+  is on and films have been uploaded there - it says so and explains that the
+  page will keep showing the panel's films. A film added here would otherwise
+  look added and then lost.
+
+The films themselves are compressed on the way in: 1280x720 at a screen
+appropriate quality, audio at voice level, the index moved to the front so a
+browser can start playing before the file has finished arriving. The shop's own
+films lose about half their size. The original is never touched.
+
 ## Films: R2, and the one step that needs a card
 
 The videos page is built out of films in `client/src/videoAds.js` and the files

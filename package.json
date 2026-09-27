@@ -20,6 +20,8 @@
     "deploy:pages:check": "npm run build && wrangler pages deploy client/dist --project-name maa-saraswati-diary --branch main --dry-run",
     "pages:login": "wrangler login",
     "pages:dev": "wrangler pages dev client/dist --port 8788",
+    "video:add": "node client/scripts/add-video.mjs",
+    "video:list": "node client/scripts/add-video.mjs --list",
     "test:e2e": "node e2e/panel-smoke.mjs && node e2e/gallery-preview.mjs && node e2e/video-upload.mjs",
     "test:videos": "node e2e/video-upload.mjs"
   },
