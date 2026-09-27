@@ -7,12 +7,25 @@
  * produced: a large one for the product page and a small one for the grid, so a
  * listing page never downloads full-size images.
  *
+ * The result is always square. Product photos sit in a 1:1 frame on both the
+ * card and the product page, and that frame is filled edge to edge, so a photo
+ * of any other shape loses its sides. Padding to a square keeps the whole
+ * picture instead of cutting it, and leaves the shop owner able to photograph
+ * the way they like rather than learning to frame for a website.
+ *
  * Nothing is uploaded here - this only produces data URLs for the caller.
  */
 
 const LARGE_EDGE = 1100;
 const THUMB_EDGE = 420;
 const QUALITY = 0.72;
+
+/**
+ * The colour the padding takes. A plain studio white rather than the page
+ * cream: the same picture is shown on the card, on the product page and in the
+ * owner's own table, and only one of those backgrounds is cream.
+ */
+const PAD_BACKGROUND = '#ffffff';
 
 /** Firestore rejects documents over about 1 MB; leave plenty of headroom. */
 const BUDGET_BYTES = 420 * 1024;
@@ -32,21 +45,38 @@ const load = (file) =>
     img.src = url;
   });
 
+/**
+ * Draws the picture whole, centred on a square of `edge` pixels.
+ *
+ * The square is never larger than the photo's own long edge, so a small picture
+ * is not blown up and then surrounded by an ocean of white - it just gains the
+ * few pixels of padding it actually needs.
+ */
 function draw(img, edge) {
-  const scale = Math.min(1, edge / Math.max(img.naturalWidth, img.naturalHeight));
+  const long = Math.max(img.naturalWidth, img.naturalHeight);
+  const square = Math.max(1, Math.round(Math.min(edge, long)));
+  const scale = square / long;
+
   const w = Math.max(1, Math.round(img.naturalWidth * scale));
   const h = Math.max(1, Math.round(img.naturalHeight * scale));
 
   const canvas = document.createElement('canvas');
-  canvas.width = w;
-  canvas.height = h;
+  canvas.width = square;
+  canvas.height = square;
   const ctx = canvas.getContext('2d');
   ctx.imageSmoothingQuality = 'high';
-  // JPEG sources have no alpha; filling first avoids black edges.
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, w, h);
-  ctx.drawImage(img, 0, 0, w, h);
-  return { canvas, w, h };
+  // Fill first: a photo with transparency, or an edge antialiasing gap, would
+  // otherwise show whatever the canvas defaults to.
+  ctx.fillStyle = PAD_BACKGROUND;
+  ctx.fillRect(0, 0, square, square);
+  ctx.drawImage(
+    img,
+    Math.round((square - w) / 2),
+    Math.round((square - h) / 2),
+    w,
+    h
+  );
+  return { canvas, w: square, h: square };
 }
 
 const toDataUrl = (canvas, quality) =>

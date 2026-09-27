@@ -11,7 +11,10 @@ import { fetchProductImage, isUploadRef, uploadIdFromRef } from '../store/db';
  * customer pays for it once and every later visit reads it straight off disk.
  */
 
-const CACHE_PREFIX = 'ms-img:v2:';
+// Bumped to v3 when pictures became square-padded. The version is in the key so
+// that a change to how a picture is stored retires the old copies instead of
+// leaving visitors on a cached version of it.
+const CACHE_PREFIX = 'ms-img:v3:';
 const CACHE_LIMIT_MB = 4;
 
 function readCache(key) {
@@ -34,6 +37,33 @@ function writeCache(key, value) {
   }
 }
 
+/**
+ * Retires cache entries written by an earlier version of the picture format.
+ *
+ * The prefix carries a version, so when the stored pictures changed - padded to
+ * a square, say - the old copies would otherwise sit in storage forever,
+ * counting against the visitor's quota for no benefit. Cheap to run and only
+ * has work to do once per page load.
+ */
+let purged = false;
+
+function purgeOldCaches() {
+  if (purged) return;
+  purged = true;
+  try {
+    const stale = [];
+    for (let i = 0; i < window.localStorage.length; i += 1) {
+      const key = window.localStorage.key(i);
+      if (key && key.startsWith('ms-img:') && !key.startsWith(CACHE_PREFIX)) {
+        stale.push(key);
+      }
+    }
+    stale.forEach((key) => window.localStorage.removeItem(key));
+  } catch {
+    /* storage blocked or unavailable - there is nothing to clean up */
+  }
+}
+
 export default function ProductImage({
   src,
   alt = '',
@@ -46,6 +76,8 @@ export default function ProductImage({
   const id = isUploadRef(src) ? uploadIdFromRef(src) : null;
   const [url, setUrl] = useState(() => (id ? readCache(id) : null));
   const [failed, setFailed] = useState(false);
+
+  useEffect(purgeOldCaches, []);
 
   useEffect(() => {
     if (!id || url) return undefined;
