@@ -45,12 +45,20 @@ const lines = (text) =>
  * shop owner for approval.
  */
 export default function PartnerProductForm() {
-  usePageMeta({ title: isEdit ? 'Edit Product' : 'Add Product', description: 'Add or edit a product in the Maa Saraswati catalogue.', noIndex: true });
   const { id } = useParams();
   const isEdit = Boolean(id) && id !== 'new';
   const { user, isOwner } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
+
+  // After isEdit, not above it. Reading a const before its declaration is a
+  // temporal dead zone error, which took the whole page down to a blank screen
+  // rather than failing one line - the form was unusable and nothing said why.
+  usePageMeta({
+    title: isEdit ? 'Edit Product' : 'Add Product',
+    description: 'Add or edit a product in the Maa Saraswati catalogue.',
+    noIndex: true,
+  });
 
   const [form, setForm] = useState(BLANK);
   const [texts, setTexts] = useState({ description: '', highlights: '', usage: '' });

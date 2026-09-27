@@ -68,6 +68,23 @@ export default function PartnerDashboard() {
   const enqs = useFetch(() => (isOwner ? fetchEnquiries() : Promise.resolve([])), [isOwner]);
 
   /**
+   * A read that is merely slow looks exactly like one that has failed: the same
+   * "Loading…" with nothing ever after it. And a read that did fail used to fall
+   * through to "No products yet", which tells the owner their whole catalogue
+   * has vanished when in fact their connection dropped. Say which of the two
+   * this is, and give a way out of it.
+   */
+  const [stalled, setStalled] = useState(false);
+  useEffect(() => {
+    if (!mine.loading) {
+      setStalled(false);
+      return undefined;
+    }
+    const t = setTimeout(() => setStalled(true), 8000);
+    return () => clearTimeout(t);
+  }, [mine.loading]);
+
+  /**
    * The storefront keeps its own copy of every approved product. If those two
    * copies ever drift - a picture saved on one side only - a customer sees a
    * stale image with nothing to indicate it. Only the owner can put a document
@@ -254,13 +271,57 @@ export default function PartnerDashboard() {
               </Link>
             </div>
 
-            {/* Only while there is genuinely nothing to show. A background refresh
-            must not drop a "Loading…" line above a table that is already there. */}
+            {/* A failed read must not look like an empty shop. */}
+        {mine.error && shown.length === 0 ? (
+          <div className="error-state">
+            <span className="error-icon">
+              <Icon.Alert size={28} />
+            </span>
+            <h3 className="h3">Could not load your products</h3>
+            <p className="muted">
+              Nothing has been lost — this is a connection problem, not a change
+              to your catalogue. Check your internet and try again.
+            </p>
+            <button
+              type="button"
+              className="btn btn-brand btn-sm"
+              onClick={() => {
+                setStalled(false);
+                mine.reload();
+              }}
+            >
+              <Icon.Refresh size={15} /> Try again
+            </button>
+          </div>
+        ) : null}
+
         {mine.loading && shown.length === 0 && (
-          <p className="muted" style={{ padding: 20 }}>Loading…</p>
+          <div style={{ padding: 20 }}>
+            <p className="muted" style={{ margin: 0 }}>
+              {stalled ? 'This is taking longer than usual…' : 'Loading…'}
+            </p>
+            {stalled && (
+              <>
+                <p className="muted" style={{ margin: '8px 0 12px' }}>
+                  Your connection may be slow. Nothing has been lost, and the
+                  page will fill in as soon as it can.
+                </p>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => {
+                    setStalled(false);
+                    mine.reload();
+                  }}
+                >
+                  <Icon.Refresh size={15} /> Reload
+                </button>
+              </>
+            )}
+          </div>
         )}
 
-            {!mine.loading && shown.length === 0 ? (
+            {!mine.loading && !mine.error && shown.length === 0 ? (
               <div className="error-state">
                 <span className="error-icon empty-icon">
                   <Icon.Grid size={28} />
@@ -424,7 +485,25 @@ export default function PartnerDashboard() {
 
         {tab === 'enquiries' && isOwner && (
           <div className="admin-pane">
-            {enqList.length === 0 ? (
+            {enqs.error && enqList.length === 0 ? (
+              <div className="error-state">
+                <span className="error-icon">
+                  <Icon.Alert size={28} />
+                </span>
+                <h3 className="h3">Could not load the enquiries</h3>
+                <p className="muted">
+                  Nothing has been lost — this is a connection problem. Check
+                  your internet and try again.
+                </p>
+                <button
+                  type="button"
+                  className="btn btn-brand btn-sm"
+                  onClick={enqs.reload}
+                >
+                  <Icon.Refresh size={15} /> Try again
+                </button>
+              </div>
+            ) : enqList.length === 0 ? (
               <div className="error-state">
                 <span className="error-icon empty-icon">
                   <Icon.Inbox size={28} />
