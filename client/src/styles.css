@@ -5556,12 +5556,55 @@
 }
 
 @media (max-width: 620px) {
-  .nav-in:has(.nav-panel-slot) .brand-text {
-    display: none;
+  /* Nothing in the bar is hidden on a phone. The brand's name used to be
+     dropped so the way out of the panel would fit, which is not a trade anybody
+     asked for: the shop's name is on every page of the shop, and a bar showing
+     a logo and two buttons is not the same thing.
+
+     So the bar takes two lines. The name keeps the first, alone, at the size it
+     should be. The two controls share the second, side by side. */
+  .nav-in:has(.nav-panel-slot) {
+    height: auto;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    flex-wrap: wrap;
+    row-gap: 10px;
+    column-gap: 10px;
+  }
+
+  .nav-in:has(.nav-panel-slot) .brand {
+    flex: 1 0 100%;
+  }
+
+  .nav-in:has(.nav-panel-slot) .brand-name {
+    font-size: 1.05rem;
+  }
+
+  /* The way back to the site and the menu share a line, each taking half. */
+  .nav-actions {
+    order: 1;
+    flex: 1 1 0%;
+    min-width: 0;
+  }
+
+  .nav-panel-slot {
+    order: 2;
+    flex: 1 1 0%;
+    min-width: 0;
   }
 
   .nav-in:has(.nav-panel-slot) .nav-cta {
     display: inline-flex;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .admin-menu-toggle {
+    padding: 10px 12px;
+  }
+
+  .admin-menu-current {
+    font-size: 0.85rem;
   }
 }
 
@@ -5577,6 +5620,26 @@
   /* Sign Out is a control, not a headline. With the default stretch it filled the
      width of the page and became the largest thing on the screen. */
   flex: 0 0 auto;
+
+  /* And it has to be seen to be used.
+
+     The plain ghost button is outlined in --line, a pale green-grey, on a page
+     that is very nearly the same colour. It was on the screen, the right size,
+     not covered by anything, and reported as missing - which is what a button
+     nobody can see comes down to. A border you can actually make out, a ground
+     under it, a little more weight in the lettering; still lighter than the
+     green button in the bar, so the two are not competing. */
+  background: var(--white);
+  border-color: var(--ink-2);
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow: var(--sh-sm);
+}
+
+.admin-head-actions .btn:hover {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--white);
 }
 
 @media (max-width: 620px) {

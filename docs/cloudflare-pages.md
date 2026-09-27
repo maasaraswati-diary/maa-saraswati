@@ -197,6 +197,26 @@ regardless after a moment and a half. The animation still happens for
 everything it was meant for; the timeout only catches what it would otherwise
 keep.
 
+## Nothing in the bar is hidden on a phone
+
+Three things were hidden on a small screen to make room for each other, and
+each was reported as missing rather than as too small:
+
+- **The shop's name.** Dropped so the way back to the website would fit. The
+  name is on every page of the shop; a bar showing a logo and two buttons is
+  not the same thing. The bar now takes two lines instead of hiding anything:
+  the name keeps the first, the two controls share the second.
+- **The way out of the panel.** A rule that hides it on small screens is
+  right on the public site, where a burger menu carries it. There is no burger
+  in the panel, so a signed-in owner on a phone had no visible way back at all.
+- **Sign Out.** Outlined in the faintest line the stylesheet has, on a page of
+  very nearly the same colour. It was on screen, the right size, with nothing
+  over it, and could not be seen.
+
+A thing on the screen is not the same as a thing that can be seen. The contrast
+is measured rather than assumed - 10:1 for the outline against the page, 17:1
+for the lettering - and the widths checked at 320, 360, 412 and 1460 pixels.
+
 ## A domain, later
 
 Cloudflare Pages can host a domain it does not have to buy. Buy the domain
