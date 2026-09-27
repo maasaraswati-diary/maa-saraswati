@@ -9,6 +9,7 @@ const LINKS = [
   { to: '/', label: 'Home', end: true },
   { to: '/about', label: 'About Us' },
   { to: '/products', label: 'Products' },
+  { to: '/videos', label: 'Videos' },
   { to: '/#testimonials', label: 'Reviews' },
   { to: '/contact', label: 'Contact' },
 ];

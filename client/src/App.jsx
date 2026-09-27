@@ -14,6 +14,7 @@ import Products from './pages/Products';
 import ProductDetail from './pages/ProductDetail';
 import About from './pages/About';
 import Contact from './pages/Contact';
+import Videos from './pages/Videos';
 import NotFound from './pages/NotFound';
 
 // The partner panel pulls in firebase/auth, so it loads only when someone visits
@@ -92,6 +93,7 @@ export default function App() {
           <Route path="/products/:slug" element={<ProductDetail />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
+      <Route path="/videos" element={<Videos />} />
 
           {/* Partner panel */}
           <Route path="/partner" element={<PartnerLogin />} />
