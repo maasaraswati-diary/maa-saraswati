@@ -57,8 +57,8 @@ export default function TestimonialsPanel() {
   const save = async (ev) => {
     ev.preventDefault();
     const e = {};
-    if (form.name.trim().length < 2) e.name = 'Customer ka naam likhein.';
-    if (form.text.trim().length < 10) e.text = 'Review thodi lambi honi chahiye.';
+    if (form.name.trim().length < 2) e.name = 'Enter the customer name.';
+    if (form.text.trim().length < 10) e.text = 'Please write a slightly longer review.';
     if (form.text.trim().length > 600) e.text = '600 characters se kam rakhein.';
     setErrors(e);
     if (Object.keys(e).length) return;
@@ -67,18 +67,18 @@ export default function TestimonialsPanel() {
     try {
       if (editing === 'new') {
         await createTestimonial(form);
-        toast.success('Review add ho gayi — home page par dikh rahi hai.');
+        toast.success('Review added — it is now on the home page.');
       } else {
         await updateTestimonial(editing.id, form);
-        toast.success('Review update ho gayi.');
+        toast.success('Review updated.');
       }
       setEditing(null);
       reload();
     } catch (err) {
       toast.error(
         /permission|insufficient/i.test(err?.message || '')
-          ? 'Sirf shop owner hi review change kar sakta hai.'
-          : err?.message || 'Save nahi ho paya.'
+          ? 'Only the shop owner can change a review.'
+          : err?.message || 'Could not save.'
       );
     } finally {
       setBusy(false);
@@ -92,7 +92,7 @@ export default function TestimonialsPanel() {
       toast.success('Review hat gayi.');
       reload();
     } catch (err) {
-      toast.error(err?.message || 'Delete nahi ho paya.');
+      toast.error(err?.message || 'Could not delete.');
     }
   };
 
@@ -108,7 +108,7 @@ export default function TestimonialsPanel() {
       );
       reload();
     } catch (err) {
-      toast.error(err?.message || 'Order change nahi hua.');
+      toast.error(err?.message || 'Could not change the order.');
     }
   };
 
@@ -117,9 +117,9 @@ export default function TestimonialsPanel() {
       <div className="admin-toolbar">
         <p className="muted" style={{ margin: 0 }}>
           {loading
-            ? 'Reviews load ho rahi hain…'
+            ? 'Loading reviews…'
             : `${list.length} review${list.length === 1 ? '' : 's'} live${
-                list.length > 3 ? ' — home page par slider chalega' : ''
+                list.length > 3 ? ' — the home page will show a slider' : ''
               }`}
         </p>
         {!editing && (
@@ -134,7 +134,7 @@ export default function TestimonialsPanel() {
           <div className="admin-card-head">
             <h2 className="h3">
               <Icon.Sparkle size={19} />
-              {editing === 'new' ? 'New Review' : `Editing: ${editing.name}`}
+              {editing === 'new' ? 'New review' : `Editing: ${editing.name}`}
             </h2>
           </div>
 
@@ -178,7 +178,7 @@ export default function TestimonialsPanel() {
               style={{ minHeight: 110 }}
               value={form.text}
               onChange={set('text')}
-              placeholder="Customer ne kya kaha — aapki hi bhasha me likhein."
+              placeholder="What the customer said, written in your own words."
             />
             <div className="row-between">
               {errors.text ? (
@@ -186,7 +186,7 @@ export default function TestimonialsPanel() {
                   <Icon.Alert size={14} /> {errors.text}
                 </span>
               ) : (
-                <span className="hint">Zyada se zyada 600 characters.</span>
+                <span className="hint">Up to 600 characters.</span>
               )}
               <span className="hint">{form.text.trim().length}/600</span>
             </div>
@@ -218,7 +218,7 @@ export default function TestimonialsPanel() {
                 value={form.sortOrder}
                 onChange={set('sortOrder')}
               />
-              <span className="hint">0 = sabse pehle dikhegi.</span>
+              <span className="hint">0 shows it first.</span>
             </div>
           </div>
 
@@ -248,9 +248,9 @@ export default function TestimonialsPanel() {
           <span className="error-icon">
             <Icon.Alert size={26} />
           </span>
-          <h3 className="h3">Reviews load nahi hui</h3>
+          <h3 className="h3">Reviews could not be loaded</h3>
           <button type="button" className="btn btn-ghost btn-sm" onClick={reload}>
-            <Icon.Refresh size={15} /> Dobara try karein
+            <Icon.Refresh size={15} /> Try again
           </button>
         </div>
       )}
@@ -260,9 +260,9 @@ export default function TestimonialsPanel() {
           <span className="error-icon empty-icon">
             <Icon.Sparkle size={28} />
           </span>
-          <h3 className="h3">Abhi koi review nahi</h3>
+          <h3 className="h3">No reviews yet</h3>
           <p className="muted">
-            Customer ki pehli review add karein — wo turant home page par
+            Add your first customer review — it will appear on the home page
             dikhne lagegi.
           </p>
           <button type="button" className="btn btn-brand btn-sm" onClick={startNew}>

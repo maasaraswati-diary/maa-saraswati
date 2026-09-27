@@ -73,7 +73,7 @@ export default function PartnerLogin() {
 
   const forgot = async () => {
     if (!EMAIL_RE.test(email.trim())) {
-      return toast.error('Apna email pehle daalein, phir reset request karein.');
+      return toast.error('Enter your email address first, then request a reset.');
     }
     try {
       await resetPassword(email.trim());
@@ -95,8 +95,8 @@ export default function PartnerLogin() {
             </h1>
             <p className="muted" style={{ fontSize: '0.92rem' }}>
               {mode === 'signin'
-                ? 'Apne products manage karne ke liye login karein.'
-                : 'Apni shop ke products add karein — owner ke approve karne ke baad live honge!'}
+                ? 'Sign in to manage your products.'
+                : "Add the products from your shop — they go live once the owner approves them!"}
             </p>
           </div>
 
@@ -104,8 +104,8 @@ export default function PartnerLogin() {
             <div className="login-error" style={{ marginBottom: 16 }}>
               <Icon.Alert size={17} />
               <span>
-                Login abhi taiyar nahi hai. Firebase console me email/password
-                enable karna baaki hai.
+                Sign-in is not ready yet. Email and password still need to
+                be enabled in the Firebase console.
               </span>
             </div>
           )}
@@ -200,23 +200,23 @@ export default function PartnerLogin() {
 
           {mode === 'signin' && (
             <button className="link-btn" onClick={forgot} type="button">
-              Password bhool gaye? Reset karein
+              Forgot your password? Reset it
             </button>
           )}
 
           <div className="auth-switch">
             {mode === 'signin' ? (
               <>
-                Account nahi hai?{' '}
+                No account yet?{' '}
                 <button type="button" onClick={() => setMode('signup')}>
-                  Free account banayein
+                  Create a free account
                 </button>
               </>
             ) : (
               <>
-                Pehle se account hai?{' '}
+                Already have an account?{' '}
                 <button type="button" onClick={() => setMode('signin')}>
-                  Sign in karein
+                  Sign in
                 </button>
               </>
             )}
@@ -226,7 +226,7 @@ export default function PartnerLogin() {
             <div className="login-hint">
               <Icon.Info size={16} />
               <p>
-                Aap owner hain — aapko saare products aur enquiries dikhenge.
+                You are the owner — every product and enquiry is visible to you.
               </p>
             </div>
           )}

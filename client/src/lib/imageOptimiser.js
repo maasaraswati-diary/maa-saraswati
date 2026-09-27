@@ -27,7 +27,7 @@ const load = (file) =>
     };
     img.onerror = () => {
       URL.revokeObjectURL(url);
-      reject(new Error('Ye image parhi nahi ja saki. JPG, PNG ya WebP try karein.'));
+      reject(new Error('This image could not be read. Please try a JPG, PNG or WebP.'));
     };
     img.src = url;
   });
@@ -89,9 +89,9 @@ async function encode(img, edge) {
  *   ready to be written to Firestore.
  */
 export async function optimiseImage(file) {
-  if (!file) throw new Error('Koi file select nahi hui.');
+  if (!file) throw new Error('No file was chosen.');
   if (!/^image\//.test(file.type)) {
-    throw new Error('Sirf image file chalegi (JPG, PNG ya WebP).');
+    throw new Error('Only image files work here (JPG, PNG or WebP).');
   }
 
   const img = await load(file);

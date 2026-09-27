@@ -109,7 +109,7 @@ export default function PartnerProductForm() {
     setForm((f) => ({ ...f, [field]: f[field].filter((_, idx) => idx !== i) }));
 
   const addImagePath = () => {
-    const v = window.prompt('Image ka path ya URL daalein:', '/images/products/');
+    const v = window.prompt('Enter an image path or URL:', '/images/products/');
     if (v && v.trim()) setForm((f) => ({ ...f, images: [...f.images, v.trim()] }));
   };
 
@@ -130,11 +130,11 @@ export default function PartnerProductForm() {
 
     for (const file of files) {
       try {
-        setUploadMsg(`${file.name} compress ho rahi hai…`);
+        setUploadMsg(`${file.name} is being compressed…`);
         // eslint-disable-next-line no-await-in-loop
         const shot = await optimiseImage(file);
         setUploadMsg(
-          `${file.name} upload ho rahi hai (${prettyBytes(file.size)} → ${prettyBytes(shot.large.bytes)})`
+          `${file.name} is uploading (${prettyBytes(file.size)} → ${prettyBytes(shot.large.bytes)})`
         );
         // eslint-disable-next-line no-await-in-loop
         const ref = await saveProductImage(shot, user);
@@ -149,8 +149,8 @@ export default function PartnerProductForm() {
     if (added.length) {
       setForm((f) => ({ ...f, images: [...f.images, ...added] }));
       toast.success(
-        `${added.length} image add ho gayi — ${prettyBytes(before)} se ` +
-          `${prettyBytes(after)} (${Math.round((1 - after / before) * 100)}% halki)`
+        `${added.length} image(s) added — ${prettyBytes(before)} reduced to ` +
+          `${prettyBytes(after)} (${Math.round((1 - after / before) * 100)}% smaller)`
       );
     }
     if (problems.length) toast.error(problems.join(' | '));
@@ -168,10 +168,10 @@ export default function PartnerProductForm() {
   const validate = () => {
     const e = {};
     if (form.name.trim().length < 2) e.name = 'Product ka naam likhein.';
-    if (!form.price || Number(form.price) <= 0) e.price = 'Sahi price daalein.';
+    if (!form.price || Number(form.price) <= 0) e.price = 'Enter the correct selling price.';
     if (form.mrp && Number(form.mrp) < Number(form.price))
-      e.mrp = 'MRP price se kam nahi ho sakta.';
-    if (!form.images.length) e.images = 'Kam se kam ek image ka path daalein.';
+      e.mrp = 'MRP cannot be lower than the selling price.';
+    if (!form.images.length) e.images = 'Add at least one image.';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -199,15 +199,15 @@ export default function PartnerProductForm() {
       if (isEdit) {
         await updateProduct(id, payload, isOwner);
         toast.success(isOwner
-          ? 'Product update ho gaya.'
-          : 'Update ho gaya — dobara approve karne ke liye bhej diya gaya hai.');
+          ? 'Product updated.'
+          : 'Updated. It has been sent for approval again.');
       } else {
         await createProduct(payload, user);
-        toast.success('Product submit ho gaya! Shop owner ke approve karne ke baad live hoga.');
+        toast.success('Product submitted! It goes live once the shop owner approves it.');
       }
       navigate('/partner/products');
     } catch (err) {
-      toast.error(err.message || 'Save nahi ho paya.');
+      toast.error(err.message || 'Could not save.');
     } finally {
       setBusy(false);
     }
@@ -239,9 +239,9 @@ export default function PartnerProductForm() {
         <div className="notice notice-info" style={{ marginBottom: 20 }}>
           <Icon.Info size={18} />
           <div>
-            <strong>Save karne ke baad shop owner approve karega.</strong>
+            <strong>The shop owner approves it after you save.</strong>
             <p>
-              Product turant website par live nahi hoga. Approve hone ke baad hi
+              The product does not go live on the website straight away. Customers see it only after it is approved,
               customers ko dikhega.
             </p>
           </div>
@@ -265,7 +265,7 @@ export default function PartnerProductForm() {
                 <label className="label" htmlFor="shortName">Short Name</label>
                 <input id="shortName" className="input" value={form.shortName}
                   onChange={set('shortName')} placeholder="e.g. Paneer" />
-                <span className="hint">Card par dikhta hai.</span>
+                <span className="hint">Shown on the product card.</span>
               </div>
             </div>
 
@@ -290,7 +290,7 @@ export default function PartnerProductForm() {
               <div className="field">
                 <label className="label" htmlFor="tagline">Tagline (on pack)</label>
                 <input id="tagline" className="input" value={form.tagline}
-                  onChange={set('tagline')} placeholder="e.g. Shuddhata ka Vaada" />
+                  onChange={set('tagline')} placeholder="e.g. A promise of purity" />
               </div>
               <div className="field">
                 <label className="label" htmlFor="taglineEnglish">Tagline (English)</label>
@@ -303,14 +303,14 @@ export default function PartnerProductForm() {
               <label className="label" htmlFor="shortDescription">Short Description</label>
               <textarea id="shortDescription" className="textarea" style={{ minHeight: 80 }}
                 value={form.shortDescription} onChange={set('shortDescription')}
-                placeholder="Ek line — card aur product page par dikhti hai." />
+                placeholder="One line, shown on the card and the product page." />
             </div>
 
             <div className="field">
               <label className="label" htmlFor="description">Full Description</label>
               <textarea id="description" className="textarea" value={texts.description}
                 onChange={setText('description')}
-                placeholder="Har line ek paragraph banegi." />
+                placeholder="Each line becomes one paragraph." />
               <span className="hint">{lines(texts.description).length} paragraph(s)</span>
             </div>
           </div>
@@ -395,7 +395,7 @@ export default function PartnerProductForm() {
             <div className="img-upload-row">
               <label className="btn btn-brand btn-sm upload-btn">
                 <Icon.Upload size={15} />
-                {uploading ? 'Upload ho rahi hai…' : 'Computer se image chunein'}
+                {uploading ? 'Uploading…' : 'Choose an image from your computer'}
                 <input
                   type="file"
                   accept="image/*"
@@ -407,12 +407,12 @@ export default function PartnerProductForm() {
               </label>
 
               <button type="button" className="btn btn-ghost btn-sm" onClick={addImagePath}>
-                <Icon.Plus size={15} /> Path daalein
+                <Icon.Plus size={15} /> Enter a path
               </button>
 
               <span className="hint">
                 {uploadMsg ||
-                  'Apni photo chunein — khud hi compress ho jayegi aur seedha live ho jayegi.'}
+                  'Choose a photo — it is compressed for you and goes live the same way.'}
               </span>
             </div>
 
@@ -444,7 +444,7 @@ export default function PartnerProductForm() {
                 </div>
               ))}
               {form.images.length === 0 && (
-                <p className="muted" style={{ padding: 14 }}>Abhi koi image nahi.</p>
+                <p className="muted" style={{ padding: 14 }}>No images yet.</p>
               )}
             </div>
           </div>
@@ -494,7 +494,7 @@ export default function PartnerProductForm() {
               </div>
             ))}
             {form.nutrition.length === 0 && (
-              <p className="muted" style={{ padding: '10px 0' }}>Koi row nahi.</p>
+              <p className="muted" style={{ padding: '10px 0' }}>No rows yet.</p>
             )}
           </div>
 
@@ -540,7 +540,7 @@ export default function PartnerProductForm() {
               </div>
             ))}
             {form.features.length === 0 && (
-              <p className="muted" style={{ padding: '10px 0' }}>Koi feature nahi.</p>
+              <p className="muted" style={{ padding: '10px 0' }}>No features yet.</p>
             )}
           </div>
 
@@ -569,7 +569,7 @@ export default function PartnerProductForm() {
               </div>
             ))}
             {form.faqs.length === 0 && (
-              <p className="muted" style={{ padding: '10px 0' }}>Koi FAQ nahi.</p>
+              <p className="muted" style={{ padding: '10px 0' }}>No questions yet.</p>
             )}
           </div>
 

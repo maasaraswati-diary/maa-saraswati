@@ -221,8 +221,8 @@ export default function PartnerDashboard() {
                     for your approval
                   </strong>
                   <p>
-                    Approve karte hi wo website par live ho jayega. Reject karne
-                    par customer ko aapka note dikhega.
+                    Approving puts it live on the website straight away.
+                    Rejecting shows the customer your note.
                   </p>
                 </div>
               </div>
@@ -251,12 +251,12 @@ export default function PartnerDashboard() {
                   <Icon.Grid size={28} />
                 </span>
                 <h3 className="h3">
-                  {tab === 'approvals' ? 'Koi product approval ke liye nahi hai' : 'Abhi koi product nahi hai'}
+                  {tab === 'approvals' ? 'Nothing is waiting for approval' : 'No products yet'}
                 </h3>
                 <p className="muted">
                   {tab === 'approvals'
-                    ? 'Sab kuch review ho chuka hai. Naya product aate hi yahan dikhega.'
-                    : 'Apna pehla product add karein — approval ke baad wo website par live ho jayega.'}
+                    ? 'Everything has been reviewed. A new product will appear here as soon as it is submitted.'
+                    : 'Add your first product — it goes live on the website once it is approved.'}
                 </p>
                 {tab !== 'approvals' && (
                   <Link to="/partner/products/new" className="btn btn-brand btn-sm">
@@ -342,7 +342,7 @@ export default function PartnerDashboard() {
                                   onClick={() => {
                                     const note = window.prompt(
                                       'Customer ko kya batana hai? (wajah likhein)',
-                                      'Details theek karne ke baad dobara bhejein.'
+                                      'Please correct these details and send it again.'
                                     );
                                     if (note === null) return;
                                     rejectProduct(p.id, note || 'Rejected by shop owner')
