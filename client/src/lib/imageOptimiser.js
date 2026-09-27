@@ -55,11 +55,11 @@ const load = (file) =>
  *          cropping would throw away part of what the shop photographed.
  *
  *  false - the picture is centre-cropped to fill the square instead. Right for
- *          anything shown in a circle. A padded portrait put in a round frame
- *          gains nothing, because the circle cuts the sides off regardless; all
- *          it does is leave a band of padding inside the circle, which makes the
- *          photograph look smaller than the space it has. A face should fill the
- *          space it is given.
+ *          anything shown in a fixed frame of a known shape, such as a team
+ *          avatar. Padding a portrait for an avatar gains nothing: the frame
+ *          crops to its own shape regardless, so all the padding does is leave a
+ *          band of background inside the frame, which makes the photograph look
+ *          smaller than the space it has been given. A face should fill it.
  */
 function draw(img, edge, pad) {
   const natW = img.naturalWidth;

@@ -95,7 +95,7 @@ function ImageField({ label, value, onChange, onBusy, shape = 'wide' }) {
       </div>
       {shape === 'avatar' && (
         <span className="hint">
-          Shown as a round photo. A portrait is cropped to fill the circle, so
+          Shown as a square photo. A portrait is cropped to fill the frame, so
           put the face in the middle of the picture.
         </span>
       )}
@@ -106,7 +106,10 @@ function ImageField({ label, value, onChange, onBusy, shape = 'wide' }) {
           overflow: 'hidden',
           border: '1px solid var(--line)',
           background: 'var(--sand)',
-          maxWidth: shape === 'avatar' ? 120 : 320,
+          // Square for an avatar, so the preview shows the shape the page will
+          // use rather than a wide box that crops differently.
+          width: shape === 'avatar' ? 132 : undefined,
+          maxWidth: shape === 'avatar' ? 132 : 320,
         }}
       >
         {value ? (
