@@ -138,6 +138,21 @@ export function useReveal() {
   useEffect(() => {
     ensureMutationWatcher();
     scanReveals();
+
+    // A last chance for anything the observer missed.
+    //
+    // The animation hides a node until it scrolls into view, which is the whole
+    // point of it and harmless for a picture. But an observer that never fires -
+    // a node that was replaced, a browser that reports no intersection, a race
+    // with the first paint - leaves content invisible with nothing on the page
+    // to say why. A video card that never appeared was counted as a video the
+    // shop did not have, so anything still hidden after a moment is shown
+    // regardless. The animation still happens for everything it was meant for;
+    // this only catches what it would otherwise keep.
+    const safety = setTimeout(() => {
+      for (const el of document.querySelectorAll('.reveal:not(.in)')) revealNow(el);
+    }, 1500);
+    return () => clearTimeout(safety);
   });
 }
 

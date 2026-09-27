@@ -15,7 +15,7 @@ import Picture from './Picture';
  * YouTube route costs the site nothing at all, so a film is better hosted there
  * once it has been uploaded.
  */
-export default function VideoCard({ ad, index }) {
+export default function VideoCard({ ad }) {
   const [playing, setPlaying] = useState(false);
   const frameRef = useRef(null);
   const videoRef = useRef(null);
@@ -56,7 +56,13 @@ export default function VideoCard({ ad, index }) {
 
 
   return (
-    <article id={ad.slug} className={`vcard reveal reveal-d${(index % 3) + 1}`}>
+    // No fade-in on these. Every other card on the site animates as it scrolls
+    // into view, and that is fine for a picture of a product. A video is not: if
+    // the animation does not fire, the card sits there invisible, and a film the
+    // customer cannot see is a film the shop does not have. It was reported as
+    // three videos on the page and four in the panel, and the fourth was there
+    // the whole time at zero opacity.
+    <article id={ad.slug} className="vcard">
       <div className="vcard-frame" ref={frameRef}>
         {playing ? (
           onYouTube ? (

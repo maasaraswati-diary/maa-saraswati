@@ -183,6 +183,20 @@ It has to run against a real deployment. The list is in Firestore, which a local
 server reaches over the network, so a run against localhost would write the list
 for real while the films went into a local store the site cannot see.
 
+## Content that must never stay hidden
+
+Cards fade in as they scroll into view, which is fine for a picture of a
+product. It is not fine for a video: the animation hides the card until an
+intersection observer fires, and if it does not, the film is on the page and
+cannot be seen. It was reported as three videos on the website and four in the
+panel - the fourth was there the whole time at zero opacity. A film a customer
+cannot see is a film the shop does not have.
+
+So the video cards do not animate, and every other animated card is shown
+regardless after a moment and a half. The animation still happens for
+everything it was meant for; the timeout only catches what it would otherwise
+keep.
+
 ## A domain, later
 
 Cloudflare Pages can host a domain it does not have to buy. Buy the domain

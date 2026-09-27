@@ -40,8 +40,8 @@ export default function Videos() {
         <div className="container">
           {ads.length ? (
             <div className="grid grid-2 videos-grid">
-              {ads.map((ad, i) => (
-                <VideoCard key={ad.slug} ad={ad} index={i} />
+              {ads.map((ad) => (
+                <VideoCard key={ad.slug} ad={ad} />
               ))}
             </div>
           ) : (
