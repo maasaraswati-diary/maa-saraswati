@@ -13,7 +13,14 @@
  * photography stays in place until the owner replaces it.
  */
 
-export const ABOUT_DOC_ID = 'about';
+export const ABOUT_DEFAULT_SECTIONS = [
+  'header',
+  'story',
+  'promise',
+  'timeline',
+  'team',
+  'facility',
+];
 
 export const DEFAULT_ABOUT = {
   header: {

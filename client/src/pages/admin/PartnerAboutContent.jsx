@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Icon from '../../components/Icons';
 import ProductImage from '../../components/ProductImage';
 import { useToast } from '../../components/Toast';
@@ -14,15 +14,6 @@ const lines = (text) =>
     .filter(Boolean);
 
 const deepCopy = (v) => JSON.parse(JSON.stringify(v));
-
-/** Remembers that the one-time rule has been dealt with, or waved away. */
-const SETUP_DISMISSED = 'ms-about-setup-dismissed';
-
-/** The exact rule to publish, kept in one place so both places quote it. */
-const PAGE_CONTENT_RULE = `match /pageContent/{id} {
-  allow read: if true;
-  allow write: if owner();
-}`;
 
 /**
  * One picture slot: pick a file, see what is there, or put the built-in photo
@@ -215,46 +206,6 @@ export default function PartnerAboutContent() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [loaded, setLoaded] = useState(false);
-  // The rule notice is a one-off, not something to read on every visit. It is
-  // kept out of the way once dismissed, and saving still says plainly if the
-  // rule is still missing.
-  const [setupHidden, setSetupHidden] = useState(
-    () => {
-      try {
-        return window.localStorage.getItem(SETUP_DISMISSED) === '1';
-      } catch {
-        return false;
-      }
-    }
-  );
-  const [showRule, setShowRule] = useState(false);
-  // Set when a save is refused. The fix is a one-off in the Firebase console,
-  // and it is the only thing standing between the owner and working content, so
-  // it gets said plainly and in full rather than as a reference to a note that
-  // may have been dismissed.
-  const [blocked, setBlocked] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const blockedRef = useRef(null);
-
-  // Runs after the panel is actually in the DOM. An animation frame from the
-  // click handler would fire before React had rendered it, and the scroll would
-  // find nothing to scroll to.
-  useEffect(() => {
-    if (!blocked) return;
-    blockedRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, [blocked]);
-
-  const copyRule = async () => {
-    try {
-      await navigator.clipboard.writeText(PAGE_CONTENT_RULE);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    } catch {
-      setCopied(false);
-      toast.error('Could not copy automatically — select the text and copy it.');
-    }
-  };
-
   useEffect(() => {
     let cancelled = false;
     fetchAboutContent()
@@ -314,20 +265,8 @@ export default function PartnerAboutContent() {
       await saveAboutContent(payload, user);
       toast.success('About page updated — it is live on the website now.');
       setLoaded(true);
-      setBlocked(false);
     } catch (err) {
-      // A missing rule reads as a bare "permission denied", which tells the
-      // owner nothing about what to do. The banner at the top can be dismissed,
-      // so the instructions are repeated here where the failure happened rather
-      // than pointed at somewhere else on the page.
-      const denied =
-        /permission/i.test(err?.code || '') || /permission/i.test(err?.message || '');
-      if (denied) {
-        setBlocked(true);
-        toast.error('Could not save — one step is still needed at the top of this tab.');
-      } else {
-        toast.error(err?.message || 'Could not save.');
-      }
+      toast.error(err?.message || 'Could not save.');
     } finally {
       setSaving(false);
     }
@@ -353,113 +292,6 @@ export default function PartnerAboutContent() {
 
   return (
     <form onSubmit={save}>
-      {blocked && (
-        <div className="notice notice-warn about-blocked" ref={blockedRef}>
-          <Icon.Alert size={18} />
-          <div>
-            <strong>Your changes are not saved yet</strong>
-            <p>
-              Nothing is wrong with what you have typed. The site is simply not
-              allowed to store it yet, because one Firestore rule has not been
-              published. It takes about a minute, and only ever once.
-            </p>
-            <ol className="about-steps">
-              <li>
-                Open{' '}
-                <a
-                  href="https://console.firebase.google.com/project/maa-saraswati-diary/firestore/databases/(default)/rules"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Firebase Console → Firestore → Rules
-                </a>{' '}
-                and sign in.
-              </li>
-              <li>Copy the four lines below.</li>
-              <li>
-                Paste them <em>above</em> the closing{' '}
-                <code>{'match /{document=**}'}</code> line.
-              </li>
-              <li>Press Publish, then come back and press Save again.</li>
-            </ol>
-            <div className="img-upload-row" style={{ marginTop: 10 }}>
-              <button
-                type="button"
-                className="btn btn-brand btn-sm"
-                onClick={copyRule}
-              >
-                <Icon.Check size={15} /> {copied ? 'Copied' : 'Copy the rule'}
-              </button>
-              <pre className="rules-snippet" style={{ margin: 0 }}>
-                {PAGE_CONTENT_RULE}
-              </pre>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {loaded && (
-        <div className="notice notice-info" style={{ marginBottom: 18 }}>
-          <Icon.Info size={18} />
-          <div>
-            <strong>Saved copy is live</strong>
-            <p>
-              What you see here is what the public About page shows. Press Save
-              after any change — there is no separate publish step.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {!loaded && !setupHidden && (
-        <div className="notice notice-info about-setup" style={{ marginBottom: 18 }}>
-          <Icon.Info size={18} />
-          <div>
-            <p style={{ margin: 0 }}>
-              <strong>Saving needs one rule published once.</strong>{' '}
-              The page works as it stands — this only affects saving your changes.{' '}
-              <button
-                type="button"
-                className="link-btn"
-                onClick={() => setShowRule((v) => !v)}
-              >
-                {showRule ? 'Hide the rule' : 'Show me what to paste'}
-              </button>
-            </p>
-
-            {showRule && (
-              <>
-                <p style={{ margin: '8px 0 0' }}>
-                  In the Firebase console open <code>Firestore → Rules</code> and
-                  add this above the closing catch-all, then press{' '}
-                  <code>Publish</code>:
-                </p>
-                <pre className="rules-snippet">{`match /pageContent/{id} {
-  allow read: if true;
-  allow write: if owner();
-}`}</pre>
-              </>
-            )}
-          </div>
-          <button
-            type="button"
-            className="icon-btn about-setup-x"
-            onClick={() => {
-              setSetupHidden(true);
-              try {
-                window.localStorage.setItem(SETUP_DISMISSED, '1');
-              } catch {
-                /* storage blocked - it will just reappear next time */
-              }
-            }}
-            title="Dismiss"
-            aria-label="Dismiss"
-          >
-            <Icon.X size={15} />
-          </button>
-        </div>
-      )}
-
       {/* ---------- header ---------- */}
       <div className="card form-card">
         <div className="admin-card-head">
@@ -672,13 +504,7 @@ export default function PartnerAboutContent() {
           disabled={saving || uploading}
         >
           <Icon.Check size={17} />
-          {saving
-            ? 'Saving…'
-            : blocked
-              ? 'Try saving again'
-              : uploading
-                ? 'Waiting for the photo…'
-                : 'Save and publish'}
+          {saving ? 'Saving…' : uploading ? 'Waiting for the photo…' : 'Save and publish'}
         </button>
         <button type="button" className="btn btn-ghost" onClick={restore} disabled={saving}>
           <Icon.Refresh size={16} /> Restore the original text

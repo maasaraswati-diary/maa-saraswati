@@ -19,7 +19,6 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { db } from '../firebase';
-import { ABOUT_DOC_ID } from '../aboutContent';
 
 const nowIso = () => new Date().toISOString();
 const newId = () =>
@@ -36,6 +35,23 @@ const newId = () =>
  */
 const DRAFTS = 'products';
 const LIVE = 'shop';
+
+/**
+ * The About page's text lives in the storefront collection, under this id.
+ *
+ * It would be tidier in a collection of its own, but that needs a Firestore rule
+ * published, and only the project owner can release one from the console. The
+ * storefront already has exactly the access this needs - open to read, owner-only
+ * to write - so the page content rides along there instead of waiting on a
+ * console visit.
+ *
+ * The `kind: 'page'` marker is what keeps it out of the product list. Anything
+ * without a `slug` is not a product, which is the check used below; the marker
+ * says why, so the next reader is not left guessing.
+ */
+const PAGE_DOC_ID = 'page-about';
+const PAGE_KIND = 'page';
+const isPageDoc = (id, data) => id === PAGE_DOC_ID || data?.kind === PAGE_KIND;
 
 const clean = (v) => (v === undefined ? null : v);
 
@@ -95,9 +111,11 @@ function slugify(value) {
 /** The public storefront: only products the owner has approved. */
 export async function fetchApprovedProducts() {
   // Plain collection read - no `where` clause - so the security rules can allow
-  // it outright. The collection only ever contains approved products.
+  // it outright. The collection only ever contains approved products, plus the
+  // About page's text, which is filtered out here.
   const snap = await getDocs(collection(db, LIVE));
   return snap.docs
+    .filter((d) => !isPageDoc(d.id, d.data()))
     .map(toProduct)
     .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
 }
@@ -338,12 +356,15 @@ export async function syncShopWithApproved(products) {
     }
   }
 
-  // A product that is no longer approved must not stay on sale.
+  // A product that is no longer approved must not stay on sale. The About page
+  // document is not a product and is not owned by the product list at all, so it
+  // has to be skipped here or opening the panel would quietly wipe the page.
   const live = await getDocs(collection(db, LIVE));
   const approvedIds = new Set(
     products.filter((p) => p.status === 'approved').map((p) => p.id)
   );
   for (const d of live.docs) {
+    if (isPageDoc(d.id, d.data())) continue;
     if (!approvedIds.has(d.id)) {
       await deleteDoc(d.ref);
       removed.push(d.id);
@@ -526,15 +547,15 @@ export async function seedIfEmpty(products, owner) {
 
 /**
  * The About page keeps its words in Firestore so the owner can change them from
- * the panel. Public to read, owner-only to write - see `pageContent` in
- * firestore.rules.
+ * the panel. It rides in the storefront collection - open to read, owner-only to
+ * write - which is why no new security rule was needed. See PAGE_DOC_ID above.
  *
  * A missing document is not an error: it just means nothing has been saved yet,
  * and the page falls back to the copy in aboutContent.js.
  */
 export async function fetchAboutContent() {
   try {
-    const snap = await getDoc(doc(db, 'pageContent', ABOUT_DOC_ID));
+    const snap = await getDoc(doc(db, LIVE, PAGE_DOC_ID));
     return snap.exists() ? snap.data() : null;
   } catch (e) {
     // A read failure must not take the page down; the defaults are a fine page.
@@ -545,8 +566,11 @@ export async function fetchAboutContent() {
 
 /** Writes the whole document, so there is no merge to get wrong. */
 export async function saveAboutContent(content, user) {
-  await setDoc(doc(db, 'pageContent', ABOUT_DOC_ID), {
+  await setDoc(doc(db, LIVE, PAGE_DOC_ID), {
     ...content,
+    // Carried on every save so the filter that keeps this out of the product
+    // list can never be defeated by a field that happens to be missing.
+    kind: PAGE_KIND,
     updatedAt: nowIso(),
     updatedBy: user?.email || '',
   });
