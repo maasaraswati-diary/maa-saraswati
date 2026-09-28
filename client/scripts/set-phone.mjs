@@ -1,5 +1,10 @@
 /**
- * One-off: move the shop's number from 9814391854 to 9781444655, everywhere.
+ * Move the shop's number, everywhere, in one pass.
+ *
+ * DIRECTION: this run goes 9781444655 -> 9814391854, putting the client's own
+ * number back on the site. The rules below are the only thing that decides
+ * which way it goes, so they are the first thing to read before running it.
+ * To send it the other way, swap the two sides of each rule.
  *
  * Node reads and writes UTF-8 itself, so nothing is re-encoded on the way
  * through - no BOM appears and the em dashes and ellipses in the comments stay
@@ -15,12 +20,12 @@ const ROOT = process.cwd();
 const WRITE = process.argv.includes('--write');
 
 // Old -> new, longest and most specific first so a short rule cannot eat part of
-// a longer one.
+// a longer one. Read the direction at the top of this file before running.
 const RULES = [
-  ['+91 98143 91854', '+91 97814 44655'],
-  ['e.g. 98143 91854', 'e.g. 97814 44655'],
-  ['98143 91854', '97814 44655'],
-  ['919814391854', '919781444655'],
+  ['+91 97814 44655', '+91 98143 91854'],
+  ['e.g. 97814 44655', 'e.g. 98143 91854'],
+  ['97814 44655', '98143 91854'],
+  ['919781444655', '919814391854'],
 ];
 
 const SKIP = new Set(['node_modules', '.git', 'dist', '.wrangler', 'generated']);

@@ -69,7 +69,7 @@ export default function EnquiryModal({ open, onClose }) {
         <div className="enq-panel-foot">
           <Icon.Phone size={16} />
           <span>
-            Prefer to talk? <a href="tel:+919781444655">+91 97814 44655</a>
+            Prefer to talk? <a href="tel:+919814391854">+91 98143 91854</a>
           </span>
           <a
             href={SITE.whatsapp}

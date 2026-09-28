@@ -168,7 +168,7 @@ export default function EnquiryForm({
             <strong>Thank you — we have your enquiry.</strong>
             <p className="muted" style={{ fontSize: '0.9rem' }}>
               Our team will call you back within one working day. For anything
-              urgent, ring +91 97814 44655.
+              urgent, ring +91 98143 91854.
             </p>
             {/* The enquiry is saved, so this is a second, faster way to reach us
                 rather than the only one - which is why it is offered instead of
@@ -221,7 +221,7 @@ export default function EnquiryForm({
             className={`input ${errors.phone ? 'err' : ''}`}
             value={form.phone}
             onChange={set('phone')}
-            placeholder="e.g. 97814 44655"
+            placeholder="e.g. 98143 91854"
             inputMode="tel"
             autoComplete="tel"
           />

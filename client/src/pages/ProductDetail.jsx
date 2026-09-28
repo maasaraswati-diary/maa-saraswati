@@ -439,7 +439,7 @@ export default function ProductDetail() {
               <Icon.Phone size={18} />
               <span>
                 Prefer to talk? Call{' '}
-                <a href="tel:+919781444655">+91 97814 44655</a> — 6 AM to 9 PM
+                <a href="tel:+919814391854">+91 98143 91854</a> — 6 AM to 9 PM
               </span>
             </div>
           </div>
