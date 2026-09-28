@@ -3,11 +3,17 @@
  *
  * Two halves, for two reasons.
  *
- * The Worker half runs with the network and KV faked out. It is the only way to
- * test the parts that matter - that a lead's name and number go out, that their
- * message does not, that one address cannot make the owner's phone ring fifty
- * times, and that nobody but the owner can send a test - without putting those
- * fifty notifications on an actual handset.
+ * The Worker half runs with the network, KV and Telegram all faked out. It is the
+ * only way to test the parts that matter - that a lead's name and number go
+ * out, that their message does not, that one address cannot make the owner's
+ * phone ring fifty times, that nobody but the owner can send a test, and that a
+ * provider which refuses is reported as refused - without putting those fifty
+ * notifications on an actual handset, or needing a real bot token.
+ *
+ * The refusal case is here because it is the one that cost a day: the first
+ * version of this did not look at the response, so a provider swallowing every
+ * message looked exactly like one delivering them, and the owner was told the
+ * alerts worked.
  *
  * The form half builds the shop with no Firebase in it (see firebase.js,
  * VITE_STATIC_ONLY) so the enquiry can be sent without writing to the owner's
@@ -32,7 +38,11 @@ const { chromium } = require('playwright');
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 const DIST = join(ROOT, 'client', 'dist');
-const PORT = 8798;
+const PORT = 8799;
+
+/* Stand-ins. Anything but these would be a real credential in a test. */
+const TOKEN = '123456:TEST-TOKEN-NOT-REAL';
+const CHAT = '99887766';
 
 let pass = 0;
 const fails = [];
@@ -62,23 +72,30 @@ function fakeKv() {
 }
 
 /**
- * Stands in for the network. Everything the Worker asks for is either the push
- * provider or Google's identity service, and both are recorded rather than
- * reached, so a test can never ring a real phone or need a real token.
+ * Stands in for the network. Everything the Worker asks for is either Telegram
+ * or Google's identity service, and both are recorded rather than reached, so a
+ * test can never ring a real phone or need a real token.
  */
-function fakeNetwork({ asEmail, ntfyFails = false } = {}) {
-  const calls = { ntfy: [], identity: [] };
+function fakeNetwork({ asEmail, telegram = 'ok' } = {}) {
+  const calls = { telegram: [], identity: [] };
   globalThis.fetch = async (url, init) => {
     const u = String(url);
     if (u.includes('identitytoolkit')) {
       calls.identity.push(u);
-      const body = asEmail ? { users: [{ email: asEmail }] } : { users: [] };
-      return new Response(JSON.stringify(body), { status: 200 });
+      return new Response(JSON.stringify(asEmail ? { users: [{ email: asEmail }] } : { users: [] }),
+        { status: 200 });
     }
-    if (u.includes('ntfy.sh')) {
-      calls.ntfy.push({ url: u, init });
-      if (ntfyFails) throw new Error('ntfy is down');
-      return new Response('ok', { status: 200 });
+    if (u.includes('api.telegram.org')) {
+      calls.telegram.push({ url: u, init });
+      if (telegram === 'throw') throw new Error('telegram unreachable');
+      if (telegram === 'refuse') {
+        return new Response(
+          JSON.stringify({ ok: false, description: 'bot was blocked by the user' }),
+          { status: 403 }
+        );
+      }
+      return new Response(JSON.stringify({ ok: true, result: { message_id: 7 } }),
+        { status: 200 });
     }
     throw new Error(`unexpected request: ${u}`);
   };
@@ -105,118 +122,169 @@ const call = (body, { search = '', ip = '203.0.113.9', token = '' } = {}) =>
       }),
       json: async () => body,
     },
-    env: { VIDEOS: kv },
+    env: { VIDEOS: kv, TELEGRAM_BOT_TOKEN: TOKEN, TELEGRAM_CHAT_ID: CHAT },
   });
 
 let kv = fakeKv();
 let net = fakeNetwork();
 let res = await call(enquiry());
-let sent = net.ntfy[0];
+let sent = net.telegram[0];
 
-eq(net.ntfy.length, 1, 'one alert is sent');
-ok(/ntfy\.sh\/maa-enq-[a-f0-9]{24}/.test(sent.url),
-  `it goes to the private topic, not somewhere guessable (${sent.url.replace(/maa-enq-(\w{6})\w+/, 'maa-enq-$1…')})`);
+eq(net.telegram.length, 1, 'one alert is sent');
+ok(sent.url === `https://api.telegram.org/bot${TOKEN}/sendMessage`,
+  'it goes to Telegram');
 eq(sent.init.method, 'POST', 'posted');
-ok(String(sent.init.headers.Title).includes('Bulk / wholesale order'),
-  'the title says what it is about');
-ok(String(sent.init.body).includes('Ramesh Kaur'), 'the name is in it');
-ok(String(sent.init.body).includes('98765 43210'), 'the phone number is in it');
-ok(String(sent.init.headers.Click).includes('/partner/products?tab=enquiries'),
-  'tapping it opens the enquiries tab');
-ok(!String(sent.init.body).includes('sweet shop'),
+const payload = JSON.parse(sent.init.body);
+eq(payload.chat_id, CHAT, 'addressed to the owner\'s chat');
+ok(payload.text.includes('New enquiry - Bulk / wholesale order'),
+  'the first line says what it is about');
+ok(payload.text.includes('Ramesh Kaur'), 'the name is in it');
+ok(payload.text.includes('98765 43210'), 'the phone number is in it');
+ok(!payload.text.includes('sweet shop'),
   'the customer\'s own message is NOT sent to a third party');
+eq(payload.disable_web_page_preview, true, 'no link preview is fetched for the text');
+eq(payload.reply_markup?.inline_keyboard?.[0]?.[0]?.url,
+  'https://maa-saraswati-diary.pages.dev/partner/products?tab=enquiries',
+  'and there is a button leading straight to the enquiry');
 
-// Read the body once. A Response can only be read once, and asking for a clone
-// afterwards is a crash rather than a second look.
 const firstReply = await res.text();
 eq(JSON.parse(firstReply), { ok: true }, 'and the page is told it worked');
-ok(!firstReply.includes('maa-enq'), 'the reply does not carry the topic');
+ok(!firstReply.includes(TOKEN) && !firstReply.includes(CHAT),
+  'the reply carries neither the token nor the chat');
 
 console.log('\nOne phone, one alert every twenty minutes');
-eq(net.ntfy.length, 1, 'still one after the first enquiry');
+eq(net.telegram.length, 1, 'still one after the first enquiry');
 res = await call(enquiry({ name: 'Second caller', phone: '90000 00000' }));
-eq(net.ntfy.length, 1, 'a second enquiry from the same address sends nothing');
-eq(await res.json(), { ok: true }, 'and is still reported as fine to the page');
+eq(net.telegram.length, 1, 'a second enquiry from the same address sends nothing');
+eq(JSON.parse(await res.text()), { ok: true }, 'and is still reported as fine to the page');
 ok(kv.store.size > 0, 'the address was remembered');
 
 await call(enquiry(), { ip: '198.51.100.4' });
-eq(net.ntfy.length, 2, 'a different address does get an alert');
+eq(net.telegram.length, 2, 'a different address does get an alert');
 
-console.log('\nA push provider that is down is not the customer\'s problem');
+console.log('\nA provider that refuses is reported, not swallowed');
 kv = fakeKv();
-net = fakeNetwork({ ntfyFails: true });
+net = fakeNetwork({ telegram: 'refuse' });
 res = await call(enquiry());
-eq(res.status, 200, 'the page still gets 200');
-eq(await res.json(), { ok: true }, 'and a plain success');
-eq(net.ntfy.length, 1, 'the alert was attempted once');
+eq(res.status, 200, 'the page still gets 200 - the lead is in Firestore either way');
+eq(JSON.parse(await res.text()), { ok: true }, 'and a plain success');
+eq(net.telegram.length, 1, 'the alert was attempted once');
 
 console.log('\nA rate limiter that cannot store must not swallow the lead');
 kv = { get: async () => { throw new Error('kv down'); }, put: async () => { throw new Error('kv down'); } };
 net = fakeNetwork();
 res = await call(enquiry());
-eq(net.ntfy.length, 1, 'the alert is sent anyway');
+eq(net.telegram.length, 1, 'the alert is sent anyway');
+
+console.log('\nWith no bot set up, the shop still works and says so');
+kv = fakeKv();
+net = fakeNetwork();
+res = await onRequestPost({
+  request: {
+    url: 'https://site.example/api/notify',
+    headers: new Headers({ 'CF-Connecting-IP': '203.0.113.1' }),
+    json: async () => enquiry(),
+  },
+  env: { VIDEOS: kv },
+});
+eq(net.telegram.length, 0, 'nothing is sent');
+eq(JSON.parse(await res.text()), { ok: true }, 'and the page is told it worked');
+
+net = fakeNetwork({ asEmail: 'kunalkalia261085@gmail.com' });
+res = await onRequestPost({
+  request: {
+    url: 'https://site.example/api/notify?test=1',
+    headers: new Headers({ Authorization: 'Bearer x' }),
+    json: async () => ({}),
+  },
+  env: { VIDEOS: kv },
+});
+// Signed in as the owner, so this gets past the who-are-you check and reaches
+// the "no bot" one. The order matters: an owner with no bot gets told so.
+eq(res.status, 501, 'the test button is told the alerts are not set up yet');
+ok((await res.text()).includes('Telegram'), 'and says what is missing');
+eq(net.telegram.length, 0, 'having sent nothing');
+
+net = fakeNetwork();
+res = await onRequestPost({
+  request: {
+    url: 'https://site.example/api/notify?test=1',
+    headers: new Headers({ Authorization: 'Bearer x' }),
+    json: async () => ({}),
+  },
+  env: { VIDEOS: kv },
+});
+eq(res.status, 403, 'and a stranger with no bot configured is still refused first');
 
 console.log('\nOnly the owner may send a test');
+kv = fakeKv();
 net = fakeNetwork();
 res = await call({}, { search: '?test=1' });
 eq(res.status, 401, 'no token is refused');
-eq(net.ntfy.length, 0, 'and nothing is sent');
+eq(net.telegram.length, 0, 'and nothing is sent');
 
 kv = fakeKv();
 net = fakeNetwork({ asEmail: 'someone@example.com' });
 res = await call({}, { search: '?test=1', token: 'fake' });
 eq(res.status, 403, 'a signed-in stranger is refused');
-eq(net.ntfy.length, 0, 'and nothing is sent');
+eq(net.telegram.length, 0, 'and nothing is sent');
 
 kv = fakeKv();
 net = fakeNetwork({ asEmail: 'kunalkalia261085@gmail.com' });
 res = await call({}, { search: '?test=1', token: 'fake' });
 eq(res.status, 200, 'the owner is allowed');
-eq(net.ntfy.length, 1, 'and one test alert goes out');
-eq((await res.json()).sent, true, 'the panel is told it was sent');
+eq(net.telegram.length, 1, 'and one test alert goes out');
+eq(JSON.parse(await res.text()).sent, true, 'the panel is told it was sent');
+
 // A test must not spend the window, or the owner's first real enquiry would be
 // the one that gets no alert.
 kv = fakeKv();
 net = fakeNetwork({ asEmail: 'kunalkalia261085@gmail.com' });
 await call({}, { search: '?test=1', token: 'fake' });
 await call(enquiry(), { ip: '192.0.2.7' });
-eq(net.ntfy.length, 2, 'a real enquiry still alerts right after a test');
+eq(net.telegram.length, 2, 'a real enquiry still alerts right after a test');
+
+// A refused test must be reported as refused, or the button is the one thing
+// that would have caught the quota being exhausted.
+kv = fakeKv();
+net = fakeNetwork({ asEmail: 'kunalkalia261085@gmail.com', telegram: 'refuse' });
+res = await call({}, { search: '?test=1', token: 'fake' });
+eq(res.status, 502, 'a test that the provider refuses is not reported as sent');
+ok((await res.text()).includes('403'), 'and carries the provider\'s status');
 
 console.log('\nNonsense in the body is trimmed, not forwarded');
 kv = fakeKv();
 net = fakeNetwork();
-await call(enquiry({
-  name: 'A'.repeat(500),
-  phone: '<script>alert(1)</script>',
-  subject: 'x'.repeat(400),
-}));
-sent = net.ntfy[0];
-ok(String(sent.init.headers.Title).length < 120, 'the title is bounded');
-ok(String(sent.init.body).length < 700, 'the body is bounded');
-// Not because angle brackets are dangerous here - ntfy draws this as text, and
-// stripping them would mangle a real message like "Paneer < 1 kg". Because the
-// phone number is the one field an attacker picks to look like a different
-// caller, and it is what shows on the lock screen. It has to arrive as one
-// line: a value carrying its own newlines could add a second line to the alert
-// and read as somebody else.
+await call(enquiry({ name: 'A'.repeat(500), phone: 'x'.repeat(400), subject: 'y'.repeat(400) }));
+sent = net.telegram[0];
+const body = JSON.parse(sent.init.body).text;
+ok(body.length < 400, `the whole message is bounded (${body.length} chars)`);
+// Not because angle brackets are dangerous here - this is a text message, and
+// stripping them would mangle a real one like "Paneer < 1 kg". Because the phone
+// number is the one field an attacker picks to look like a different caller, and
+// it is what shows on the lock screen. It has to arrive as one line: a value
+// carrying its own newlines could add a second line to the alert and read as
+// somebody else.
 kv = fakeKv();
 net = fakeNetwork();
 await call(enquiry({ phone: '98765 43210\nURGENT: call me back on 99999' }));
-sent = net.ntfy[0];
-const phoneLine = String(sent.init.body).split('\n').find((l) => l.startsWith('Phone:'));
+sent = net.telegram[0];
+const text = JSON.parse(sent.init.body).text;
+const phoneLine = text.split('\n').find((l) => l.startsWith('Phone:'));
 ok(!/\n/.test(phoneLine), 'a phone number carrying its own newlines arrives as one line');
 ok(phoneLine.length <= 'Phone: '.length + 24,
   `and no longer than a phone number can be (${phoneLine.length} chars)`);
 ok(phoneLine.includes('URGENT'), 'the text is kept, just squashed rather than dropped');
-ok(String(sent.init.body).split('\n').filter((l) => l.startsWith('Phone:')).length === 1,
+ok(text.split('\n').filter((l) => l.startsWith('Phone:')).length === 1,
   'so it cannot add a second line pretending to be another field');
 
 kv = fakeKv();
 net = fakeNetwork();
-res = await call({}, { });            // no name, no phone, no subject
-sent = net.ntfy[0];
-ok(String(sent.init.headers.Title).includes('General enquiry'), 'an empty enquiry still says something sensible');
-ok(String(sent.init.body).includes('Someone'), 'and does not say "undefined"');
+await call({}, { });
+sent = net.telegram[0];
+ok(JSON.parse(sent.init.body).text.includes('General enquiry'),
+  'an empty enquiry still says something sensible');
+ok(JSON.parse(sent.init.body).text.includes('Someone'), 'and does not say "undefined"');
 
 /* ================================================================= form half */
 
@@ -298,17 +366,14 @@ try {
   const wa = await page.locator('.done-banner a[href*="wa.me"]');
   eq(await wa.count(), 1, 'the customer is offered the WhatsApp shortcut');
   const href = await wa.getAttribute('href');
-  const text = decodeURIComponent(new URL(href).searchParams.get('text') || '');
-  console.log('        WhatsApp message:\n' + text.split('\n').map((l) => '          ' + l).join('\n'));
-  ok(/^Name: Ramesh Kaur/.test(text), 'it is addressed with the name');
-  ok(text.includes('Phone: 98765 43210'), 'carries the phone number');
-  ok(text.includes('Subject: Bulk / wholesale order'), 'and the subject');
-  ok(text.includes('I run a sweet shop and need 10 kg every morning.'),
+  const waText = decodeURIComponent(new URL(href).searchParams.get('text') || '');
+  console.log('        WhatsApp message:\n' + waText.split('\n').map((l) => '          ' + l).join('\n'));
+  ok(/^Name: Ramesh Kaur/.test(waText), 'it is addressed with the name');
+  ok(waText.includes('Phone: 98765 43210'), 'carries the phone number');
+  ok(waText.includes('Subject: Bulk / wholesale order'), 'and the subject');
+  ok(waText.includes('I run a sweet shop and need 10 kg every morning.'),
     'and the whole message, which the page had just cleared');
-  ok(!/undefined|\[object/.test(text), 'with no undefined in it');
-
-  // The form is emptied after sending; the shortcut must not be quoting the
-  // empty one, which is what "undefined" above would have meant.
+  ok(!/undefined|\[object/.test(waText), 'with no undefined in it');
   eq(await page.inputValue('#enq-name'), '', 'the form really was cleared');
   ok((await wa.innerText()).toLowerCase().includes('whatsapp'), 'and the button says so');
 } catch (err) {
