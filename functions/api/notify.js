@@ -187,7 +187,14 @@ export async function onRequestPost({ request, env }) {
   const phone = trim(body.phone, 24);
   const about = trim(body.subject, 60) || trim(body.product, 60) || 'General enquiry';
 
-  if (configured(env) && (await allowed(env, addressOf(request)))) {
+  if (!configured(env)) {
+    // Said out loud. This branch is silent otherwise, and it was: the secrets
+    // were set against a deployment that had already been replaced, so the
+    // running code could not see them, every enquiry returned a cheerful
+    // success, and no alert was sent. The second time a provider could refuse in
+    // silence is one too many - the log is where this has to show up.
+    console.log('notify: no bot configured, nothing sent');
+  } else if (await allowed(env, addressOf(request))) {
     try {
       await alert(env, {
         title: `New enquiry - ${about}`,
