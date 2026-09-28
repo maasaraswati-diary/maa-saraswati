@@ -12,6 +12,7 @@ import {
   saveProductImage,
 } from '../../store/db';
 import { getCategories } from '../../catalogue';
+import { toPrice } from '../../api';
 import { optimiseImage, prettyBytes } from '../../lib/imageOptimiser';
 import { usePageMeta } from '../../hooks';
 
@@ -108,6 +109,16 @@ export default function PartnerProductForm() {
   };
   const setText = (key) => (e) => setTexts((t) => ({ ...t, [key]: e.target.value }));
 
+  /* The price is optional. It carries the MRP with it, because an MRP is only
+     ever a comparison against a price: clearing the price clears the MRP rather
+     than leaving a struck-through figure in the box waiting to be saved, and the
+     field is disabled while there is nothing to compare it against. */
+  const setPrice = (e) => {
+    const value = e.target.value;
+    setForm((f) => ({ ...f, price: value, mrp: toPrice(value) === null ? '' : f.mrp }));
+    setErrors((x) => ({ ...x, price: undefined, mrp: undefined }));
+  };
+
   const updateItem = (field, i, key, value) =>
     setForm((f) => {
       const next = [...f[field]];
@@ -178,8 +189,11 @@ export default function PartnerProductForm() {
   const validate = () => {
     const e = {};
     if (form.name.trim().length < 2) e.name = 'Please enter the product name.';
-    if (!form.price || Number(form.price) <= 0) e.price = 'Enter the correct selling price.';
-    if (form.mrp && Number(form.mrp) < Number(form.price))
+    // The price is optional, so it is not checked. A product with no price goes
+    // live as "price on request" and the customer is told to call or message.
+    // The MRP is still checked, because it is a claim about a price - but only
+    // when there is a price for it to be wrong about.
+    if (form.price && form.mrp && Number(form.mrp) < Number(form.price))
       e.mrp = 'MRP cannot be lower than the selling price.';
     if (!form.images.length) e.images = 'Add at least one image.';
     setErrors(e);
@@ -194,10 +208,14 @@ export default function PartnerProductForm() {
       return;
     }
     setBusy(true);
+    // Sent as null, never 0. A 0 here would publish the product as free.
+    const price = toPrice(form.price);
     const payload = {
       ...form,
-      price: Number(form.price),
-      mrp: Number(form.mrp) || Number(form.price),
+      price,
+      // The MRP defaults to the price so a priced product still shows a figure to
+      // strike against, and goes with it when there is no price at all.
+      mrp: price === null ? null : toPrice(form.mrp) ?? price,
       rating: Number(form.rating) || 0,
       reviewCount: Number(form.reviewCount) || 0,
       description: lines(texts.description),
@@ -333,16 +351,31 @@ export default function PartnerProductForm() {
 
             <div className="form-row form-row-3">
               <div className="field">
-                <label className="label" htmlFor="price">Selling Price (₹) <span className="req">*</span></label>
+                <label className="label" htmlFor="price">
+                  Selling Price (₹) <span className="opt">optional</span>
+                </label>
                 <input id="price" type="number" min="0" className={`input ${errors.price ? 'err' : ''}`}
-                  value={form.price} onChange={set('price')} placeholder="190" />
-                {errors.price && <span className="field-error"><Icon.Alert size={14} /> {errors.price}</span>}
+                  value={form.price} onChange={setPrice} placeholder="190" />
+                {errors.price ? (
+                  <span className="field-error"><Icon.Alert size={14} /> {errors.price}</span>
+                ) : (
+                  /* Say what happens if it is left blank, here, where the
+                     decision is being made. Not on a help page nobody opens. */
+                  <span className="field-hint">
+                    Leave blank and the site shows &ldquo;Price on request&rdquo;.
+                  </span>
+                )}
               </div>
               <div className="field">
                 <label className="label" htmlFor="mrp">MRP (₹)</label>
-                <input id="mrp" type="number" min="0" className={`input ${errors.mrp ? 'err' : ''}`}
+                <input id="mrp" type="number" min="0" disabled={!form.price}
+                  className={`input ${errors.mrp ? 'err' : ''}`}
                   value={form.mrp} onChange={set('mrp')} placeholder="210" />
-                {errors.mrp && <span className="field-error"><Icon.Alert size={14} /> {errors.mrp}</span>}
+                {errors.mrp ? (
+                  <span className="field-error"><Icon.Alert size={14} /> {errors.mrp}</span>
+                ) : !form.price ? (
+                  <span className="field-hint">Only used to show a discount.</span>
+                ) : null}
               </div>
               <div className="field">
                 <label className="label" htmlFor="unit">Unit</label>

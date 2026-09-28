@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import Icon, { ICON_MAP } from './Icons';
 import ProductImage from './ProductImage';
-import { formatPrice, discountPercent } from '../api';
+import { formatPrice, discountPercent, hasPrice, toPrice, PRICE_ON_REQUEST } from '../api';
 
 /**
  * `headingLevel` exists because the same card is used in two different places.
@@ -13,7 +13,15 @@ import { formatPrice, discountPercent } from '../api';
  */
 export default function ProductCard({ product, index = 0, headingLevel = 3 }) {
   const [imgOk, setImgOk] = useState(true);
-  const off = discountPercent(product.price, product.mrp);
+  // The owner may leave the price off. Everything price-shaped hangs off this
+  // one flag, including the strike-through: a product with no price but an MRP
+  // would otherwise compare 210 against null, which JavaScript reads as 210
+  // against 0, and the card would claim to be saving ₹210 on a product that has
+  // no price to save against.
+  const priced = hasPrice(product);
+  const mrp = toPrice(product.mrp);
+  const showMrp = priced && mrp !== null && mrp > product.price;
+  const off = priced ? discountPercent(product.price, product.mrp) : 0;
   const highlights = (product.highlights || []).slice(0, 3);
   const Heading = `h${headingLevel}`;
 
@@ -85,12 +93,18 @@ export default function ProductCard({ product, index = 0, headingLevel = 3 }) {
 
         <div className="pcard-foot">
           <div className="pcard-price">
-            <span className="pcard-now">{formatPrice(product.price)}</span>
-            {product.mrp > product.price && (
-              <span className="pcard-mrp">{formatPrice(product.mrp)}</span>
-            )}
-            {product.packSize && (
-              <span className="pcard-size">/ {product.packSize}</span>
+            {priced ? (
+              <>
+                <span className="pcard-now">{formatPrice(product.price)}</span>
+                {showMrp && <span className="pcard-mrp">{formatPrice(mrp)}</span>}
+                {product.packSize && (
+                  <span className="pcard-size">/ {product.packSize}</span>
+                )}
+              </>
+            ) : (
+              /* The card keeps its shape: a row with nothing in it would leave
+                 a hole in the grid, and the customer is better told to ask. */
+              <span className="pcard-ask">{PRICE_ON_REQUEST}</span>
             )}
           </div>
           <span className="pcard-arrow">

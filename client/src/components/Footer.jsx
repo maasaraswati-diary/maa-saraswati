@@ -164,8 +164,6 @@ export default function Footer() {
             rights reserved.
           </p>
           <p className="footer-legal">
-            <span>FSSAI Lic. 10021064000123</span>
-            <span className="dot" />
             <span>100% Vegetarian Products</span>
             <span className="dot" />
             <Link to="/partner">Partner Panel</Link>

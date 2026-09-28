@@ -19,6 +19,7 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { db } from '../firebase';
+import { toPrice } from '../api';
 
 const nowIso = () => new Date().toISOString();
 const newId = () =>
@@ -81,8 +82,11 @@ function toProduct(d) {
     category: data.category,
     tagline: data.tagline || '',
     taglineEnglish: data.taglineEnglish || '',
-    price: Number(data.price) || 0,
-    mrp: Number(data.mrp) || 0,
+    // null, not 0. The owner may leave a price off, and a 0 here would put the
+    // product in the shop as "free" and, because the number sorts, at the top of
+    // the cheapest-first list.
+    price: toPrice(data.price),
+    mrp: toPrice(data.mrp),
     unit: data.unit || 'pack',
     packSize: data.packSize || '',
     fat: data.fat || null,
@@ -203,8 +207,11 @@ function toDoc(product) {
     category: clean(product.category) || 'Other',
     tagline: clean(product.tagline),
     taglineEnglish: clean(product.taglineEnglish),
-    price: Number(product.price) || 0,
-    mrp: Number(product.mrp) || 0,
+    // The same rule on the way out as on the way in. Writing 0 for a product the
+    // owner never priced would turn "on request" into "free" on the next save,
+    // and the drift repair below would then copy that 0 into the shop.
+    price: toPrice(product.price),
+    mrp: toPrice(product.mrp),
     unit: clean(product.unit) || 'pack',
     packSize: clean(product.packSize),
     fat: clean(product.fat),

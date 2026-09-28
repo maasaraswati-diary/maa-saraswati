@@ -7,7 +7,7 @@ import ProductCard from '../components/ProductCard';
 import ImageLightbox from '../components/ImageLightbox';
 import { ErrorState, Loader } from '../components/Feedback';
 import { useToast } from '../components/Toast';
-import { discountPercent, formatPrice } from '../api';
+import { discountPercent, formatPrice, hasPrice, toPrice, PRICE_ON_REQUEST } from '../api';
 import { getProduct } from '../catalogue';
 import { useFetch, usePageMeta } from '../hooks';
 
@@ -61,19 +61,28 @@ export default function ProductDetail() {
   const product = data?.product;
   const related = data?.related || [];
 
+  // The shop may not have posted a price for this one. `priced` is the single
+  // answer to that and every price on this page hangs off it, because a missing
+  // price compared with JavaScript's loose rules is a zero, and a zero is a price.
+  const priced = hasPrice(product);
+  const mrp = toPrice(product?.mrp);
+  const showMrp = priced && mrp !== null && mrp > product.price;
+
   // Title, description, share preview and canonical link all follow the product.
   usePageMeta({
     title: product ? `${product.name}` : '',
     description: product
-      ? `${product.shortDescription || product.name} - ${formatPrice(product.price)} for ${
-          product.packSize || product.unit
+      ? `${product.shortDescription || product.name} - ${
+          priced
+            ? `${formatPrice(product.price)} for ${product.packSize || product.unit}`
+            : 'price on request'
         }. ${(product.highlights || []).slice(0, 3).join('. ')}`
       : '',
     image: product?.image,
     type: 'product',
   });
 
-  const off = product ? discountPercent(product.price, product.mrp) : 0;
+  const off = product && priced ? discountPercent(product.price, product.mrp) : 0;
 
   const tabContent = useMemo(() => {
     if (!product) return null;
@@ -328,12 +337,25 @@ export default function ProductDetail() {
 
             <div className="pd-pricebox">
               <div className="pd-price">
-                <span className="pd-now">{formatPrice(product.price)}</span>
-                {product.mrp > product.price && (
+                {priced ? (
                   <>
-                    <span className="pd-mrp">{formatPrice(product.mrp)}</span>
-                    <span className="pd-save">
-                      Save {formatPrice(product.mrp - product.price)}
+                    <span className="pd-now">{formatPrice(product.price)}</span>
+                    {showMrp && (
+                      <>
+                        <span className="pd-mrp">{formatPrice(mrp)}</span>
+                        <span className="pd-save">
+                          Save {formatPrice(mrp - product.price)}
+                        </span>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  /* No price posted, so say so and point at the two ways to get
+                     one. An empty box here reads as a page that failed to load. */
+                  <>
+                    <span className="pd-now pd-ask">{PRICE_ON_REQUEST}</span>
+                    <span className="pd-save pd-ask-note">
+                      Call or message us and we will quote you
                     </span>
                   </>
                 )}
@@ -398,14 +420,19 @@ export default function ProductDetail() {
               </Link>
             </div>
 
-            <div className="pd-total">
-              <span className="muted">Total for {qty} ×</span>
-              <strong>{formatPrice(product.price * qty)}</strong>
-              <span className="muted">
-                {qty} {product.unit}
-                {qty > 1 ? 's' : ''} · {product.packSize} each
-              </span>
-            </div>
+            {/* The running total is arithmetic on a price. With no price there
+                is nothing to total, and showing "₹0 for 3 ×" would be a
+                promise. */}
+            {priced && (
+              <div className="pd-total">
+                <span className="muted">Total for {qty} ×</span>
+                <strong>{formatPrice(product.price * qty)}</strong>
+                <span className="muted">
+                  {qty} {product.unit}
+                  {qty > 1 ? 's' : ''} · {product.packSize} each
+                </span>
+              </div>
+            )}
 
             <div className="pd-call">
               <Icon.Phone size={18} />
@@ -507,11 +534,23 @@ export default function ProductDetail() {
       {/* Sticky mobile bar */}
       <div className="pd-sticky">
         <div className="pd-sticky-price">
-          <strong>{formatPrice(product.price)}</strong>
-          <span>
-            {product.packSize} · {qty} {product.unit}
-            {qty > 1 ? 's' : ''}
-          </span>
+          {priced ? (
+            <>
+              <strong>{formatPrice(product.price)}</strong>
+              <span>
+                {product.packSize} · {qty} {product.unit}
+                {qty > 1 ? 's' : ''}
+              </span>
+            </>
+          ) : (
+            <>
+              <strong className="pd-ask">{PRICE_ON_REQUEST}</strong>
+              <span>
+                {product.packSize} · {qty} {product.unit}
+                {qty > 1 ? 's' : ''}
+              </span>
+            </>
+          )}
         </div>
         <button
           className="btn btn-ghost btn-sm"

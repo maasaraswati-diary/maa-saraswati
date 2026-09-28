@@ -10,6 +10,7 @@ import {
   fetchProductBySlug,
   fetchTestimonials,
 } from './store/db';
+import { compareByPrice } from './api';
 import { isFirebaseConfigured } from './firebase';
 import snapshot from './generated/catalogue.json';
 
@@ -62,10 +63,14 @@ function matches(product, params) {
 function sortList(list, sort) {
   const out = [...list];
   switch (sort) {
+    // Unpriced products last in both directions. The same comparator is used by
+    // the products page, because the two sorts have to agree: the offline path
+    // producing a different order than the online one is the whole reason
+    // sorting happens here instead of in the query.
     case 'price-asc':
-      return out.sort((a, b) => a.price - b.price);
+      return out.sort((a, b) => compareByPrice(a, b, 1));
     case 'price-desc':
-      return out.sort((a, b) => b.price - a.price);
+      return out.sort((a, b) => compareByPrice(a, b, -1));
     case 'rating':
       return out.sort((a, b) => (b.rating || 0) - (a.rating || 0));
     case 'name':

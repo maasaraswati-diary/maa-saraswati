@@ -1001,6 +1001,18 @@
   color: var(--muted);
 }
 
+/* Shown instead of a price the shop has not posted. It keeps the card's shape:
+   the price row is one of the things that makes every card the same height, and
+   an empty row would leave a hole in the grid. Set in the display face at the
+   size of the real price, so the card does not look like it failed to load. */
+.pcard-ask {
+  font-family: var(--font-display);
+  font-size: 1.12rem;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--ink-2);
+}
+
 .pcard-arrow {
   width: 40px;
   height: 40px;
@@ -1925,6 +1937,27 @@
 .pd-unit {
   font-size: 0.9rem;
   color: var(--ink-2);
+  font-weight: 500;
+}
+
+/* The price the shop has not posted, and the sentence that goes with it.
+
+   Deliberately not the green of a real price and not a badge: there is nothing
+   to save and nothing to claim, so it reads as a plain statement in ink. The
+   two sit on one line, wrapping if they have to. */
+.pd-ask {
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--ink-2);
+}
+
+.pd-ask-note {
+  padding: 0;
+  background: none;
+  color: var(--ink-2);
+  font-size: 0.9rem;
   font-weight: 500;
 }
 

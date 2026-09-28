@@ -9,6 +9,7 @@ import {
   PageHeader,
 } from '../components/Feedback';
 import { getProducts, getCategories } from '../catalogue';
+import { compareByPrice } from '../api';
 import { useDebounced, useFetch, usePageMeta } from '../hooks';
 
 const SORTS = [
@@ -58,10 +59,12 @@ export default function Products() {
   const products = useMemo(() => {
     const list = [...(data?.products || [])];
     switch (sort) {
+      // Unpriced products go last in both directions, so they are not led to the
+      // front of the page as the cheapest thing on it.
       case 'price-asc':
-        return list.sort((a, b) => a.price - b.price);
+        return list.sort((a, b) => compareByPrice(a, b, 1));
       case 'price-desc':
-        return list.sort((a, b) => b.price - a.price);
+        return list.sort((a, b) => compareByPrice(a, b, -1));
       case 'rating':
         return list.sort((a, b) => b.rating - a.rating);
       case 'name':

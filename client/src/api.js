@@ -138,9 +138,61 @@ export const api = {
   },
 };
 
-/** Formats a rupee amount with Indian digit grouping. */
+/**
+ * A product's price as a number, or null when there is not one.
+ *
+ * Null and zero have to stay two different things, and that difference is the
+ * whole point of letting the owner leave the price off. `Number(x) || 0` folds
+ * "not posted" into "zero", and a zero prints as ₹0 - which tells a customer the
+ * paneer is free rather than that the shop will quote them for it.
+ *
+ * A zero coming back as null is deliberate. A rupee price of zero on a dairy
+ * product is a slip of the keyboard, not a product, and blank is the reading the
+ * owner meant.
+ */
+export function toPrice(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+/** True when the shop has posted a price for this product. */
+export function hasPrice(product) {
+  return toPrice(product?.price) !== null;
+}
+
+/** Shown in place of a price the shop has not posted. */
+export const PRICE_ON_REQUEST = 'Price on request';
+
+/**
+ * Orders products by price, for the two sort options on the catalogue.
+ *
+ * Unpriced products go to the end whichever way the list is going. Sorting them
+ * as plain numbers turns null into a zero, which put every product the shop had
+ * not priced at the top of "cheapest first" - the least-known items leading the
+ * page, ahead of everything actually for sale.
+ */
+export function compareByPrice(a, b, direction = 1) {
+  const pa = toPrice(a?.price);
+  const pb = toPrice(b?.price);
+  if (pa === null && pb === null) return 0;
+  if (pa === null) return 1;
+  if (pb === null) return -1;
+  return direction * (pa - pb);
+}
+
+/**
+ * Formats a rupee amount with Indian digit grouping.
+ *
+ * Blank for anything that is not a number, so a call site left behind by the
+ * price change shows nothing rather than making a claim. Zero still prints as
+ * ₹0, because this also formats sums - the panel's listed value is honestly zero
+ * when nothing in the catalogue is priced.
+ */
 export function formatPrice(value) {
-  const n = Number(value) || 0;
+  if (value === null || value === undefined || value === '') return '';
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '';
   return `₹${n.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 }
 

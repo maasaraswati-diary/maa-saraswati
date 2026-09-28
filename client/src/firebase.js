@@ -26,11 +26,33 @@ const firebaseConfig = {
   appId: '1:708736705937:web:0865d378c5ab7a1ffe2630',
 };
 
-export const isFirebaseConfigured = !Object.values(firebaseConfig).some(
+/**
+ * Build the shop as a plain static site: no Firebase, the catalogue served
+ * entirely from the build-time snapshot, and not one request to any project.
+ *
+ * This is what the tests run against. They need a storefront they can put a
+ * product into - an unpriced one, in this case - and the only honest way to get
+ * that is to answer from data the test itself wrote, rather than saving a test
+ * product to the owner's live catalogue while the owner is using the panel. A
+ * network cut does not do it: the Firestore SDK sends its reads over a
+ * long-lived connection and retries it, so the page hangs on "0 products"
+ * instead of falling back.
+ *
+ * Set with:  VITE_STATIC_ONLY=1 npm run build
+ * Unset, it is the real project. That is the default and what is deployed.
+ */
+const STATIC_ONLY = import.meta.env?.VITE_STATIC_ONLY === '1';
+
+export const isFirebaseConfigured = !STATIC_ONLY && !Object.values(firebaseConfig).some(
   (v) => typeof v === 'string' && v.startsWith('PASTE_')
 );
 
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+// Guarded, because initializeApp with nothing to initialise throws - and
+// `isFirebaseConfigured` already existed to describe a shop with no project,
+// which could not actually be built until this line agreed with it.
+const app = isFirebaseConfigured
+  ? (getApps().length ? getApp() : initializeApp(firebaseConfig))
+  : null;
 
 // Firestore is read straight from the server on every visit, using the SDK's
 // default in-memory cache. An on-disk cache is deliberately avoided: a product

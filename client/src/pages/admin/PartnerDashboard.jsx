@@ -21,7 +21,7 @@ import {
   rejectProduct,
   syncShopWithApproved,
 } from '../../store/db';
-import { formatPrice } from '../../api';
+import { formatPrice, hasPrice, toPrice } from '../../api';
 
 const TABS = [
   { key: 'products', label: 'My Products', icon: 'Grid' },
@@ -192,7 +192,13 @@ export default function PartnerDashboard() {
     }
   };
 
-  const totalValue = list.reduce((s, p) => s + (Number(p.price) || 0), 0);
+  // Only the products that actually carry a price add up to anything, so the
+  // figure is the value of the priced part of the catalogue. The count of what
+  // was left out is kept with it, because "listed value" on its own would quietly
+  // understate the shop by every product the owner chose to quote for.
+  const priced = list.filter((p) => hasPrice(p));
+  const totalValue = priced.reduce((s, p) => s + toPrice(p.price), 0);
+  const unpriced = list.length - priced.length;
 
   // The menu, built here rather than beside the tab state because it needs the
   // counts, which are only known once the products and enquiries have arrived.
@@ -284,7 +290,9 @@ export default function PartnerDashboard() {
         <div className="grid grid-4 admin-stats">
           {[
             { icon: 'Grid', label: isOwner ? 'All products' : 'My products', value: (mine.data || []).length },
-            { icon: 'Tag', label: 'Listed value', value: formatPrice(totalValue) },
+            { icon: 'Tag',
+              label: unpriced ? 'Listed value (priced only)' : 'Listed value',
+              value: formatPrice(totalValue) },
             { icon: 'Check', label: 'In stock', value: (mine.data || []).filter((p) => p.inStock !== false).length },
             { icon: 'Inbox', label: 'New enquiries', value: enqList.filter((e) => e.status === 'new').length },
           ].map((c, i) => {
@@ -446,8 +454,19 @@ export default function PartnerDashboard() {
                         </td>
                         <td><span className="badge">{p.category}</span></td>
                         <td>
-                          <strong>{formatPrice(p.price)}</strong>
-                          {p.packSize && <span className="muted" style={{ display: 'block' }}>{p.packSize}</span>}
+                          {hasPrice(p) ? (
+                            <>
+                              <strong>{formatPrice(p.price)}</strong>
+                              {p.packSize && (
+                                <span className="muted" style={{ display: 'block' }}>{p.packSize}</span>
+                              )}
+                            </>
+                          ) : (
+                            /* The same words the site shows, so the owner can
+                               see what a customer sees without opening the
+                               product. */
+                            <span className="muted">On request</span>
+                          )}
                         </td>
                         <td>
                           <StatusBadge status={p.status} />

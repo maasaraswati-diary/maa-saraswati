@@ -551,6 +551,25 @@ ol[class] {
   color: var(--brand);
 }
 
+/* "optional" on a field the shop may leave blank. Quiet, because it is the
+   normal case for a price and not an exception - the brand green that marks a
+   required field would read as a warning. */
+.label .opt {
+  margin-left: 6px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+}
+
+/* What a blank field will do. Sits under the input it belongs to, and says the
+   consequence rather than restating the label. */
+.field-hint {
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
 .input,
 .textarea,
 .select {
@@ -566,6 +585,20 @@ ol[class] {
 .input::placeholder,
 .textarea::placeholder {
   color: #a8aeb3;
+}
+
+/* A field that cannot be used right now - the MRP while there is no price to
+   compare it against. It has to look inert rather than merely be inert, or the
+   owner types into it and nothing is saved. */
+.input:disabled,
+.textarea:disabled,
+.select:disabled {
+  background: var(--sand);
+  border-color: var(--line);
+  color: #8b968f;
+  cursor: not-allowed;
+  -webkit-text-fill-color: #8b968f;
+  opacity: 1;
 }
 
 .input:focus,
