@@ -8,6 +8,7 @@ import ImageLightbox from '../components/ImageLightbox';
 import { ErrorState, Loader } from '../components/Feedback';
 import { useToast } from '../components/Toast';
 import { discountPercent, formatPrice, hasPrice, toPrice, PRICE_ON_REQUEST } from '../api';
+import { SITE } from '../site';
 import { getProduct } from '../catalogue';
 import { useFetch, usePageMeta } from '../hooks';
 
@@ -438,7 +439,7 @@ export default function ProductDetail() {
               <Icon.Phone size={18} />
               <span>
                 Prefer to talk? Call{' '}
-                <a href="tel:+919814391854">+91 98143 91854</a> — 6 AM to 9 PM
+                <a href="tel:+919781444655">+91 97814 44655</a> — 6 AM to 9 PM
               </span>
             </div>
           </div>
@@ -557,9 +558,9 @@ export default function ProductDetail() {
           onClick={() => {
             toast.info('Opening WhatsApp enquiry…');
             window.open(
-              `https://wa.me/919814391854?text=${encodeURIComponent(
+              SITE.whatsappEnquiry(
                 `Hello Maa Saraswati, I would like to enquire about ${product.name} (${product.packSize}) x${qty}.`
-              )}`,
+              ),
               '_blank'
             );
           }}

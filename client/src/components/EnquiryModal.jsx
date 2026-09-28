@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import Icon from './Icons';
 import EnquiryForm from './EnquiryForm';
 import { useScrollLock } from '../hooks';
+import { SITE } from '../site';
 
 /**
  * Slide-up enquiry dialog. Closes on the X, on a backdrop click, and on Escape.
@@ -68,10 +69,10 @@ export default function EnquiryModal({ open, onClose }) {
         <div className="enq-panel-foot">
           <Icon.Phone size={16} />
           <span>
-            Prefer to talk? <a href="tel:+919814391854">+91 98143 91854</a>
+            Prefer to talk? <a href="tel:+919781444655">+91 97814 44655</a>
           </span>
           <a
-            href="https://wa.me/919814391854"
+            href={SITE.whatsapp}
             className="enq-panel-wa"
             target="_blank"
             rel="noreferrer"

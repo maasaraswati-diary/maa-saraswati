@@ -56,7 +56,7 @@ export default function Contact() {
   usePageMeta({
     title: 'Contact',
     description:
-      'Call +91 98143 91854 or send an enquiry for bulk orders, wholesale supply, delivery routes and retail partnerships in Gurdaspur. We reply the same day.',
+      'Call +91 97814 44655 or send an enquiry for bulk orders, wholesale supply, delivery routes and retail partnerships in Gurdaspur. We reply the same day.',
   });
   const [params] = useSearchParams();
   const [prefill, setPrefill] = useState({ message: '', product: '' });

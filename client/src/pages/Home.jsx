@@ -91,7 +91,7 @@ const FAQS = [
   },
   {
     q: 'How do I place a large order?',
-    a: 'Use the enquiry form on the Contact page or call +91 98143 91854. Tell us your requirement and our team will call you back the same day.',
+    a: 'Use the enquiry form on the Contact page or call +91 97814 44655. Tell us your requirement and our team will call you back the same day.',
   },
 ];
 
@@ -742,10 +742,10 @@ export default function Home() {
                 <Icon.Mail size={19} /> Request a Bulk Quote
               </Link>
               <a
-                href="tel:+919814391854"
+                href="tel:+919781444655"
                 className="btn btn-outline-light btn-lg"
               >
-                <Icon.Phone size={19} /> +91 98143 91854
+                <Icon.Phone size={19} /> +91 97814 44655
               </a>
             </div>
           </div>

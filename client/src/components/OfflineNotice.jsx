@@ -46,7 +46,7 @@ export default function OfflineNotice() {
       <Icon.Refresh size={16} className={gone ? '' : 'spin'} />
       <span>
         Live prices reconnecting — you are viewing our saved catalogue. Call us
-        on <strong>+91 98143 91854</strong> to confirm stock.
+        on <strong>+91 97814 44655</strong> to confirm stock.
       </span>
     </div>
   );

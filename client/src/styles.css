@@ -3928,6 +3928,58 @@
   gap: 16px;
 }
 
+/* The row that checks the owner's phone alert still works.
+
+   Deliberately quiet, and deliberately above the list rather than inside it: it
+   is about the alerts, not about any one enquiry, and it reads as a setting
+   rather than as another message in the queue. */
+.alert-test {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+  padding: 14px 18px;
+  background: var(--brand-soft);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+}
+
+.alert-test-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1 1 260px;
+}
+
+.alert-test-text strong {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.92rem;
+  color: var(--brand-deep);
+}
+
+.alert-test-text .muted {
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+/* The description is the thing that has to survive on a phone, so the button
+   goes under it rather than squeezing it to two words a line. */
+@media (max-width: 560px) {
+  .alert-test {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .alert-test .btn {
+    justify-content: center;
+  }
+}
+
 .enq-card {
   background: var(--white);
   border: 1px solid var(--line);

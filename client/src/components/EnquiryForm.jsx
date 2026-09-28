@@ -3,6 +3,7 @@ import Icon from './Icons';
 import { useToast } from './Toast';
 import { saveEnquiry } from '../store/db';
 import { isFirebaseConfigured } from '../firebase';
+import { SITE } from '../site';
 import { api } from '../api';
 
 export const SUBJECTS = [
@@ -15,6 +16,52 @@ export const SUBJECTS = [
 ];
 
 const EMPTY = { name: '', email: '', phone: '', subject: SUBJECTS[0], message: '' };
+
+/**
+ * The enquiry as one block of text, for sending on WhatsApp.
+ *
+ * Built once and kept, because the form is cleared the moment it is sent and the
+ * customer is offered the WhatsApp shortcut afterwards. Reconstructing it from
+ * an emptied form is how the offer ends up opening a blank message.
+ */
+function whatsAppBody(p) {
+  return [
+    `Name: ${p.name}`,
+    `Phone: ${p.phone || '-'}`,
+    `Email: ${p.email}`,
+    `Subject: ${p.subject}`,
+    p.product ? `Product: ${p.product}` : null,
+    '',
+    p.message,
+  ]
+    .filter(Boolean)
+    .join('\n');
+}
+
+/**
+ * Rings the shop owner's phone.
+ *
+ * Fired and forgotten. The enquiry is already in Firestore by this point, so
+ * nothing about the customer depends on this call succeeding: the only thing
+ * lost if it fails is the notification, and telling a customer their message did
+ * not arrive because a push provider is down would be a lie and a lost lead.
+ */
+function notifyOwner(payload) {
+  try {
+    fetch('/api/notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: payload.name,
+        phone: payload.phone,
+        subject: payload.subject,
+        product: payload.product,
+      }),
+    }).catch(() => {});
+  } catch {
+    // Nothing to do. See above.
+  }
+}
 
 /**
  * The customer enquiry form. Used on the Contact page and inside the floating
@@ -37,6 +84,8 @@ export default function EnquiryForm({
   const [errors, setErrors] = useState({});
   const [sending, setSending] = useState(false);
   const [done, setDone] = useState(false);
+  // What was just sent, kept only so the WhatsApp shortcut can quote it back.
+  const [sent, setSent] = useState(null);
 
   const set = (key) => (e) => {
     const value = e.target.value;
@@ -71,7 +120,11 @@ export default function EnquiryForm({
       if (isFirebaseConfigured) {
         await saveEnquiry(payload);
         setDone(true);
+        setSent(payload);
         setForm({ ...EMPTY });
+        // Only once the enquiry is safely in Firestore, so the owner is never
+        // alerted about a message that was not saved.
+        notifyOwner(payload);
         toast.success(
           `Thank you ${form.name.split(' ')[0]}! We have received your enquiry.`
         );
@@ -80,33 +133,19 @@ export default function EnquiryForm({
       }
       const res = await api.sendEnquiry(payload);
       setDone(true);
+      setSent(payload);
       setForm({ ...EMPTY });
+      notifyOwner(payload);
       toast.success(res.message);
       onDone?.(res);
     } catch (err) {
       // The API is unreachable. Rather than lose the enquiry, hand the customer
       // a pre-filled WhatsApp message so the lead still reaches us.
       if (err.status === 0) {
-        const body = [
-          `Name: ${form.name}`,
-          `Phone: ${form.phone || '-'}`,
-          `Email: ${form.email}`,
-          `Subject: ${form.subject}`,
-          hiddenProduct ? `Product: ${hiddenProduct}` : null,
-          '',
-          form.message,
-        ]
-          .filter(Boolean)
-          .join('\n');
-
         toast.error(
           'Could not reach our server. Opening WhatsApp with your message — just press send.'
         );
-        window.open(
-          `https://wa.me/919814391854?text=${encodeURIComponent(body)}`,
-          '_blank',
-          'noopener'
-        );
+        window.open(SITE.whatsappEnquiry(whatsAppBody(payload)), '_blank', 'noopener');
         setForm({ ...EMPTY });
         onDone?.({ offline: true });
         return;
@@ -129,8 +168,26 @@ export default function EnquiryForm({
             <strong>Thank you — we have your enquiry.</strong>
             <p className="muted" style={{ fontSize: '0.9rem' }}>
               Our team will call you back within one working day. For anything
-              urgent, ring +91 98143 91854.
+              urgent, ring +91 97814 44655.
             </p>
+            {/* The enquiry is saved, so this is a second, faster way to reach us
+                rather than the only one - which is why it is offered instead of
+                pushed. Sending it here opens WhatsApp on the customer's own
+                phone with the enquiry already written out; they press send.
+                That extra tap is the price of not asking this project for a
+                card: a message pushed to our number on its own needs Meta's
+                paid API. */}
+            {sent && (
+              <a
+                className="btn btn-ghost btn-sm"
+                style={{ marginTop: 10 }}
+                target="_blank"
+                rel="noopener noreferrer"
+                href={SITE.whatsappEnquiry(whatsAppBody(sent))}
+              >
+                <Icon.Whatsapp size={17} /> Also send it on WhatsApp
+              </a>
+            )}
           </div>
         </div>
       )}
@@ -164,7 +221,7 @@ export default function EnquiryForm({
             className={`input ${errors.phone ? 'err' : ''}`}
             value={form.phone}
             onChange={set('phone')}
-            placeholder="e.g. 98143 91854"
+            placeholder="e.g. 97814 44655"
             inputMode="tel"
             autoComplete="tel"
           />
@@ -250,7 +307,7 @@ export default function EnquiryForm({
         </button>
         {showWhatsApp && (
           <a
-            href="https://wa.me/919814391854"
+            href={SITE.whatsapp}
             className="btn btn-ghost btn-lg"
             target="_blank"
             rel="noreferrer"

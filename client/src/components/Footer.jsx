@@ -40,7 +40,7 @@ const SOCIALS = [
   { icon: 'Instagram', label: 'Instagram', href: 'https://instagram.com' },
   { icon: 'Facebook', label: 'Facebook', href: 'https://facebook.com' },
   { icon: 'Youtube', label: 'YouTube', href: 'https://youtube.com' },
-  { icon: 'Whatsapp', label: 'WhatsApp', href: 'https://wa.me/919814391854' },
+  { icon: 'Whatsapp', label: 'WhatsApp', href: SITE.whatsapp },
 ];
 
 export default function Footer() {

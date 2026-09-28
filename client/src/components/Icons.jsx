@@ -267,6 +267,12 @@ export const Icon = {
       <circle cx="16.5" cy="12.5" r="1.3" fill="currentColor" stroke="none" />
     </Svg>
   ),
+  Bell: (p) => (
+    <Svg {...p}>
+      <path d="M6 9a6 6 0 1112 0c0 4 1.5 5.5 1.5 5.5h-15S6 13 6 9z" />
+      <path d="M10 18a2 2 0 004 0" />
+    </Svg>
+  ),
   Instagram: (p) => (
     <Svg {...p}>
       <rect x="3.5" y="3.5" width="17" height="17" rx="5" />

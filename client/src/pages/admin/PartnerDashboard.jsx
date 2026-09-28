@@ -43,6 +43,71 @@ function StatusBadge({ status }) {
   return <span className={s.cls}>{s.label}</span>;
 }
 
+/**
+ * Rings the owner's phone, so they can find out whether the alert works.
+ *
+ * A phone notification is the kind of thing that is either arriving or silently
+ * doing nothing, and from inside this panel the two look identical: the enquiries
+ * are on screen either way. This one button is the difference, and it earns its
+ * place because the alert is the one part of this the owner cannot see working.
+ *
+ * It only sends when the owner asks, and the endpoint refuses anyone else - a
+ * free way to make someone's handset ring is not a thing to leave open.
+ */
+function TestAlertButton() {
+  const { user } = useAuth();
+  const toast = useToast();
+  const [busy, setBusy] = useState(false);
+
+  const send = async () => {
+    setBusy(true);
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch('/api/notify?test=1', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || `The server said ${res.status}.`);
+      toast.success(
+        'Sent. Your phone should buzz in a few seconds — if nothing arrives, the alert app on your phone still needs setting up.'
+      );
+    } catch (err) {
+      toast.error(err.message || 'Could not send the test alert.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="alert-test">
+      <div className="alert-test-text">
+        <strong>
+          <Icon.Bell size={16} /> Phone alerts
+        </strong>
+        <span className="muted">
+          Every enquiry sends you a notification on your phone. Nothing here
+          depends on it — the enquiries below are the record either way.
+        </span>
+      </div>
+      <button
+        type="button"
+        className="btn btn-ghost btn-sm"
+        onClick={send}
+        disabled={busy}
+      >
+        {busy ? (
+          <>
+            <span className="btn-spin" /> Sending…
+          </>
+        ) : (
+          <>Send a test alert</>
+        )}
+      </button>
+    </div>
+  );
+}
+
 export default function PartnerDashboard() {
   usePageMeta({ title: 'Partner Panel', description: 'Manage products, approvals, reviews and enquiries.', noIndex: true });
   const { user, isOwner, signOut } = useAuth();
@@ -575,6 +640,12 @@ export default function PartnerDashboard() {
 
         {tab === 'enquiries' && isOwner && (
           <div className="admin-pane">
+            {/* A phone alert is the kind of thing that is either working or
+                silently doing nothing, and from inside this panel there is no way
+                to tell the difference. One button settles it: it rings the
+                handset, and if nothing arrives then the alert is not set up and
+                the enquiries are still here to be read. */}
+            <TestAlertButton />
             {enqs.error && enqList.length === 0 ? (
               <div className="error-state">
                 <span className="error-icon">
