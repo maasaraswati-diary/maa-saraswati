@@ -86,7 +86,13 @@ async function allowed(env, address) {
 }
 
 /**
- * Is there a bot to send with?
+ * Who the alerts go to.
+ *
+ * A comma-separated list, not one chat. The shop owner's number and the client's
+ * are different lines of business: the customer may be messaging one while the
+ * other is the one who has to act, and neither of them should have to ask the
+ * other whether an enquiry came in. Both are on the list, and either can be
+ * removed without touching the code.
  *
  * Both values are Pages secrets, set with `wrangler pages secret put`, and the
  * token is not a thing that may be committed: the repository is public, and a
@@ -94,11 +100,17 @@ async function allowed(env, address) {
  * still works - the enquiry is in the panel either way - so this only has to be
  * true, not loud.
  */
+const chatIds = (env) =>
+  String(env.TELEGRAM_CHAT_ID || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
 const configured = (env) =>
-  Boolean(env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID);
+  Boolean(env.TELEGRAM_BOT_TOKEN) && chatIds(env).length > 0;
 
 /**
- * Sends one alert, and says in the log whether it arrived.
+ * Sends one alert to every chat on the list, and says in the log how it went.
  *
  * The status check is the point. This did not look at the response to begin
  * with, which meant a provider refusing the message looked exactly like one that
@@ -106,42 +118,59 @@ const configured = (env) =>
  * working while a shared quota was swallowing every one of them. A silent
  * failure that cannot be told from a success is the worst kind.
  *
+ * One chat failing does not stop the next. A blocked bot on one handset must
+ * not cost the other one its enquiry, and it must not make the customer see an
+ * error, so a refusal is recorded and carried on from.
+ *
  * Nothing identifying goes in the log: no token, no chat, no lead's details.
  */
 async function alert(env, { title, body }) {
-  const res = await fetch(
-    `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: env.TELEGRAM_CHAT_ID,
-        text: `${title}\n\n${body}`.slice(0, MAX_TEXT),
-        // Telegram would otherwise try to fetch a URL in the text and show a
-        // preview for it. The one URL here is ours, in a button.
-        disable_web_page_preview: true,
-        // A button, so the alert leads straight to the enquiry instead of the
-        // owner having to open Telegram and then find the panel.
-        reply_markup: {
-          inline_keyboard: [[{ text: 'Open the enquiry', url: PANEL_URL }]],
-        },
-        disable_notification: false,
-      }),
-    }
-  );
+  const text = `${title}\n\n${body}`.slice(0, MAX_TEXT);
+  const sent = [];
+  const refused = [];
 
-  if (!res.ok) {
-    // Telegram's own words, which are the only clue there is. "bot was blocked
-    // by the user" and "Not Found" mean very different things and both arrive
-    // as a failure here.
-    const detail = await res.text().catch(() => '');
-    console.log(`notify: telegram refused ${res.status} :: ${detail.slice(0, 300)}`);
-    throw new Error(`telegram refused: ${res.status}`);
+  for (const chat of chatIds(env)) {
+    try {
+      const res = await fetch(
+        `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: chat,
+            text,
+            // Telegram would otherwise try to fetch a URL in the text and show a
+            // preview for it. The one URL here is ours, in a button.
+            disable_web_page_preview: true,
+            // A button, so the alert leads straight to the enquiry instead of the
+            // owner having to open Telegram and then find the panel.
+            reply_markup: {
+              inline_keyboard: [[{ text: 'Open the enquiry', url: PANEL_URL }]],
+            },
+            disable_notification: false,
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        // Telegram's own words, which are the only clue there is. "bot was
+        // blocked by the user" and "Not Found" mean very different things and
+        // both arrive here as a failure.
+        const detail = await res.text().catch(() => '');
+        refused.push(res.status);
+        console.log(`notify: telegram refused ${res.status} :: ${detail.slice(0, 300)}`);
+        continue;
+      }
+      const data = await res.json().catch(() => null);
+      sent.push(chat);
+      console.log(`notify: sent (ok=${data?.ok})`);
+    } catch (err) {
+      refused.push(0);
+      console.log(`notify: not delivered :: ${String(err?.message || err)}`);
+    }
   }
 
-  const data = await res.json().catch(() => null);
-  console.log(`notify: sent (ok=${data?.ok})`);
-  return data;
+  return { sent, refused };
 }
 
 export async function onRequestPost({ request, env }) {
@@ -164,11 +193,28 @@ export async function onRequestPost({ request, env }) {
       );
     }
     try {
-      await alert(env, {
+      // Reported by whether anything actually arrived, not by the call having
+      // returned. This is the one button that would have caught the exhausted
+      // quota, so it must not be able to say "sent" when nothing was delivered.
+      // The statuses come back too, because the only person who will read this
+      // is the owner asking why their phone is quiet, and "403" is the answer and
+      // "something went wrong" is not.
+      const { sent, refused } = await alert(env, {
         title: 'Test alert',
         body: 'This is what an enquiry alert looks like. Nothing is waiting in the panel.',
       });
-      return json({ ok: true, sent: true });
+      if (!sent.length) {
+        return json(
+          {
+            ok: false,
+            error: `Not delivered. Every chat on the list refused it${
+              refused.length ? ` (${refused.join(', ')})` : ''
+            }.`,
+          },
+          502
+        );
+      }
+      return json({ ok: true, sent: true, chats: sent.length });
     } catch (err) {
       return json({ ok: false, error: String(err?.message || err) }, 502);
     }
@@ -195,27 +241,24 @@ export async function onRequestPost({ request, env }) {
     // silence is one too many - the log is where this has to show up.
     console.log('notify: no bot configured, nothing sent');
   } else if (await allowed(env, addressOf(request))) {
-    try {
-      await alert(env, {
-        title: `New enquiry - ${about}`,
-        body: [
-          `Name: ${who}`,
-          phone ? `Phone: ${phone}` : null,
-          `About: ${about}`,
-          '',
-          'Open the panel to read it and mark it answered.',
-        ]
-          .filter(Boolean)
-          .join('\n'),
-      });
-    } catch (err) {
-      // The enquiry is in Firestore and the owner can see it in the panel. A
-      // notification failing is not a reason to tell a customer their message did
-      // not arrive. It is said out loud, though, because "the alerts are broken"
-      // has to be findable somewhere - it was not, and that is why a swallowed
-      // quota went unnoticed.
-      console.log(`notify: not delivered :: ${String(err?.message || err)}`);
-    }
+    // The enquiry is in Firestore and the owner can see it in the panel. A
+    // notification failing is not a reason to tell a customer their message did
+    // not arrive. It is said out loud, though, because "the alerts are broken"
+    // has to be findable somewhere - it was not, and that is why a swallowed
+    // quota went unnoticed.
+    const { sent } = await alert(env, {
+      title: `New enquiry - ${about}`,
+      body: [
+        `Name: ${who}`,
+        phone ? `Phone: ${phone}` : null,
+        `About: ${about}`,
+        '',
+        'Open the panel to read it and mark it answered.',
+      ]
+        .filter(Boolean)
+        .join('\n'),
+    });
+    if (!sent.length) console.log('notify: no chat accepted the alert');
   }
 
   // Always the same answer, whatever happened. The page must not be able to tell

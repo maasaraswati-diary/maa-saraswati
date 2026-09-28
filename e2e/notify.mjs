@@ -42,7 +42,8 @@ const PORT = 8799;
 
 /* Stand-ins. Anything but these would be a real credential in a test. */
 const TOKEN = '123456:TEST-TOKEN-NOT-REAL';
-const CHAT = '99887766';
+const OWNER_CHAT = '99887766';
+const CLIENT_CHAT = '55667788';
 
 let pass = 0;
 const fails = [];
@@ -112,7 +113,7 @@ const enquiry = (over = {}) => ({
 });
 
 /** A call the way the page makes it: no token, no headers, JSON body. */
-const call = (body, { search = '', ip = '203.0.113.9', token = '' } = {}) =>
+const call = (body, { search = '', ip = '203.0.113.9', token = '', chats = OWNER_CHAT } = {}) =>
   onRequestPost({
     request: {
       url: `https://site.example/api/notify${search}`,
@@ -122,7 +123,7 @@ const call = (body, { search = '', ip = '203.0.113.9', token = '' } = {}) =>
       }),
       json: async () => body,
     },
-    env: { VIDEOS: kv, TELEGRAM_BOT_TOKEN: TOKEN, TELEGRAM_CHAT_ID: CHAT },
+    env: { VIDEOS: kv, TELEGRAM_BOT_TOKEN: TOKEN, TELEGRAM_CHAT_ID: chats },
   });
 
 let kv = fakeKv();
@@ -135,7 +136,7 @@ ok(sent.url === `https://api.telegram.org/bot${TOKEN}/sendMessage`,
   'it goes to Telegram');
 eq(sent.init.method, 'POST', 'posted');
 const payload = JSON.parse(sent.init.body);
-eq(payload.chat_id, CHAT, 'addressed to the owner\'s chat');
+eq(payload.chat_id, OWNER_CHAT, 'addressed to the owner\'s chat');
 ok(payload.text.includes('New enquiry - Bulk / wholesale order'),
   'the first line says what it is about');
 ok(payload.text.includes('Ramesh Kaur'), 'the name is in it');
@@ -149,11 +150,57 @@ eq(payload.reply_markup?.inline_keyboard?.[0]?.[0]?.url,
 
 const firstReply = await res.text();
 eq(JSON.parse(firstReply), { ok: true }, 'and the page is told it worked');
-ok(!firstReply.includes(TOKEN) && !firstReply.includes(CHAT),
+ok(!firstReply.includes(TOKEN) && !firstReply.includes(OWNER_CHAT),
   'the reply carries neither the token nor the chat');
 
+console.log('\nBoth the owner and the client get it');
+kv = fakeKv();
+net = fakeNetwork();
+res = await call(enquiry(), { chats: `${OWNER_CHAT}, ${CLIENT_CHAT}` });
+eq(net.telegram.length, 2, 'two alerts, one for each chat');
+eq(net.telegram.map((t) => JSON.parse(t.init.body).chat_id), [OWNER_CHAT, CLIENT_CHAT],
+  'in the order the list gives them');
+const texts = net.telegram.map((t) => JSON.parse(t.init.body).text);
+eq(texts[0], texts[1], 'and carrying the same text - the bodies differ only in chat_id');
+eq(JSON.parse(await res.text()), { ok: true }, 'the page is told it worked');
+
+kv = fakeKv();
+net = fakeNetwork();
+res = await call(enquiry(), { chats: `${OWNER_CHAT} , , ${CLIENT_CHAT} ` });
+eq(net.telegram.length, 2, 'blank entries and stray spaces in the list are ignored');
+const texts2 = net.telegram.map((t) => JSON.parse(t.init.body).text);
+eq(texts2[0], texts2[1], 'and the text still matches');
+
+console.log('\nOne blocked handset does not cost the other its enquiry');
+kv = fakeKv();
+net = fakeNetwork();
+// Telegram refuses the owner and accepts the client, from one bot.
+globalThis.fetch = async (url, init) => {
+  const u = String(url);
+  if (u.includes('identitytoolkit')) {
+    return new Response(JSON.stringify({ users: [{ email: 'kunalkalia261085@gmail.com' }] }), { status: 200 });
+  }
+  if (u.includes('api.telegram.org')) {
+    net.telegram.push({ url: u, init });
+    if (JSON.parse(init.body).chat_id === OWNER_CHAT) {
+      return new Response(JSON.stringify({ ok: false, description: 'bot was blocked by the user' }), { status: 403 });
+    }
+    return new Response(JSON.stringify({ ok: true, result: { message_id: 8 } }), { status: 200 });
+  }
+  throw new Error('unexpected');
+};
+res = await call(enquiry(), { search: '?test=1', token: 't', chats: `${OWNER_CHAT},${CLIENT_CHAT}` });
+eq(net.telegram.length, 2, 'the blocked chat was still attempted');
+eq(res.status, 200, 'but the one that worked means the test passes');
+eq(JSON.parse(await res.text()).chats, 1, 'and the panel is told how many arrived');
+
 console.log('\nOne phone, one alert every twenty minutes');
-eq(net.telegram.length, 1, 'still one after the first enquiry');
+// Its own state, because the section above leaves a bot that refuses on purpose
+// installed and a count of calls that is about a different list of chats.
+kv = fakeKv();
+net = fakeNetwork();
+await call(enquiry(), { ip: '203.0.113.9' });
+eq(net.telegram.length, 1, 'one alert for the first enquiry from an address');
 res = await call(enquiry({ name: 'Second caller', phone: '90000 00000' }));
 eq(net.telegram.length, 1, 'a second enquiry from the same address sends nothing');
 eq(JSON.parse(await res.text()), { ok: true }, 'and is still reported as fine to the page');
@@ -169,7 +216,6 @@ res = await call(enquiry());
 eq(res.status, 200, 'the page still gets 200 - the lead is in Firestore either way');
 eq(JSON.parse(await res.text()), { ok: true }, 'and a plain success');
 eq(net.telegram.length, 1, 'the alert was attempted once');
-
 console.log('\nA rate limiter that cannot store must not swallow the lead');
 kv = { get: async () => { throw new Error('kv down'); }, put: async () => { throw new Error('kv down'); } };
 net = fakeNetwork();
