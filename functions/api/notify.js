@@ -36,8 +36,11 @@
 import { isOwner } from '../_lib/auth.js';
 import { json } from '../_lib/videos.js';
 
-/* Where the alert goes when it is tapped: the panel, on the enquiries tab. */
-const PANEL_URL = 'https://maa-saraswati-diary.pages.dev/partner/products?tab=enquiries';
+/* Where the alert goes when it is tapped: the panel, on the enquiries tab.
+   The shop's own address, not the pages.dev one it was built behind - the
+   button is on a customer's lock screen, and pages.dev is a name that means
+   nothing outside this project. */
+const PANEL_URL = 'https://maa-saraswati.com/partner/products?tab=enquiries';
 
 /* One alert per address per twenty minutes. */
 const WINDOW_MS = 20 * 60 * 1000;

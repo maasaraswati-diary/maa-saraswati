@@ -1,6 +1,45 @@
 # Deploying to Cloudflare Pages
 
-**Live at <https://maa-saraswati-diary.pages.dev>**
+**Live at <https://maa-saraswati.com>** — the shop's own domain, bought at
+GoDaddy and delegated to Cloudflare. `www` redirects to it.
+
+The old addresses still answer: `maa-saraswati-diary.pages.dev` is the address
+the project was built on, and `maa-saraswati-diary.web.app` is the Firebase
+site from before the move. Neither is advertised anywhere - the canonical links,
+the share previews and the Telegram alert all use the bare domain - but the
+`web.app` one is a stale copy of the shop and should be taken down rather than
+left to be found.
+
+## Adding a domain to this project
+
+The one thing worth writing down, because it is the part that is not obvious
+from the dashboard:
+
+**An apex domain cannot be reached by adding a CNAME at the registrar.** GoDaddy
+will not give the root of a domain a CNAME, and the IP a Pages site sits on is
+not one to point an A record at. So the domain has to be *delegated* to
+Cloudflare and the DNS managed here.
+
+1. Add the domain to the Cloudflare account. Two nameservers are assigned, of the
+   form `<word>.ns.cloudflare.com`.
+2. At the registrar, replace the registrar's own nameservers with those two. The
+   old ones have to go, not just be joined.
+3. Add the domain to the Pages project's custom domains.
+4. **Pages does not always create the DNS record itself**, and it says so:
+   the domain sits at `pending` with `CNAME record not set` and the site answers
+   525. Delete whatever A records the new zone came with, and add
+   `CNAME  @  <project>.pages.dev  proxied`. `www` as a CNAME to the bare domain
+   is enough.
+5. The certificate then issues on its own. Watching the error code is the
+   cheapest way to tell what stage it is at: **525** is no certificate yet, **530**
+   means the record has just appeared and the origin is being looked up, **522**
+   means it is nearly there, and the site answering at all means it worked.
+
+Watch it from a script rather than by hand. Resolving is not the same as
+serving - a parking page resolves too, and so does an error page - so the test
+for "done" is that the domain returns the shop, not that it returns anything.
+
+## Why not Firebase Hosting
 
 The site runs on the free Firebase plan, which allows **360 MB a day** of
 transfer across every visitor. The four video ads are 5.4 MB, so a few dozen

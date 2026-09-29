@@ -8,3 +8,17 @@
 # The video files under /videos are therefore unaffected.
 
 /*    /index.html   200
+
+# www is not the shop's address, the bare domain is. One address for one shop:
+# two working copies is how a link, a share or a search result ends up pointing
+# at whichever one was crawled first, and the two are then indexed as different
+# pages with the same content.
+#
+# Redirected rather than blocked. Someone who types www, or follows an old link
+# or a WhatsApp message somebody sent, gets the shop - not an error, and not a
+# second copy to be confused with the first.
+#
+# Only the host changes; the path and query are carried across, so a product link
+# shared as www.maa-saraswati.com/products/paneer still lands on that product.
+https://www.maa-saraswati.com/*   https://maa-saraswati.com/:splat   301
+
