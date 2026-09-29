@@ -54,7 +54,12 @@ function upsert(head, selector, attrs) {
  * a host that is also a Pages custom domain. This works either way, and it also
  * fixes the share preview, which was quoting the www address in WhatsApp.
  */
-const canonicalOrigin = () => window.location.origin.replace(/^https?:\/\/www\./i, '');
+const canonicalOrigin = () =>
+  // Only the host is rewritten, and the scheme is put back by the replacement.
+  // Dropping `https://` along with the `www.` leaves a bare hostname, which is
+  // not a valid base for a URL - and that threw inside the effect, which took
+  // the whole page down to a blank screen on the www host alone.
+  window.location.origin.replace(/^(https?:\/\/)www\./i, '$1');
 
 /**
  * Gives each page its own title, description, canonical link and share preview.
