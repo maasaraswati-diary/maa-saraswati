@@ -138,7 +138,6 @@ export const DEFAULT_ABOUT = {
     points: [
       'Open 6:00 AM to 9:00 PM, all days',
       'Lab reports available on request',
-      'FSSAI Lic. 10021064000123',
     ],
   },
 };
