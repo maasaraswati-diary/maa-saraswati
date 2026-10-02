@@ -296,11 +296,6 @@
   opacity: 0.35;
 }
 
-.drawer-admin {
-  color: var(--ink-2);
-  font-size: 0.98rem;
-}
-
 .drawer-foot {
   padding-top: 22px;
   border-top: 1px solid var(--line);

@@ -198,14 +198,6 @@ export default function Navbar() {
                 </NavLink>
               );
             })}
-            <NavLink
-              to="/partner"
-              style={{ '--i': LINKS.length }}
-              className="drawer-link drawer-admin"
-            >
-              Partner Panel
-              <Icon.Lock size={17} />
-            </NavLink>
           </nav>
 
           <div className="drawer-foot">
